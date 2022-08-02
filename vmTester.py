@@ -7,8 +7,9 @@ Testing VM data load
 import numpy as np
 import os
 
-zcDir = 'data/WigNP_WL128_Int8_Indiv/ZC'
+zcDir = 'WigNP_WL128_Int8_Indiv/ZC'
 zcNp = os.listdir(zcDir)
 
 oneArr = np.load(os.path.join(zcDir, zcNp[0]))
+print(zcNp[0])
 print(oneArr.mean())
