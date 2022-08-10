@@ -18,7 +18,7 @@ import torch
 import glob
 import yaml
 import argparse
-from utils import init_seed
+from util import init_seed
 
 def create_dataloader(cfg, transform, split='train'):
     '''
@@ -128,7 +128,7 @@ def train(cfg, dataloader, model, optimizer):
         optimizer.zero_grad()
         # calc loss and full send back
         loss = criterion(prediction, label)
-        loss.backwards()
+        loss.backward()
         
         optimizer.step()
         

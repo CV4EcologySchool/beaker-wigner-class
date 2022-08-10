@@ -16,7 +16,7 @@ model_save_dir: 'model_states'
 
 # computer parameters
 seed: 11211988
-device: cuda
+device: cpu
 num_workers: 1
 
 # training hyperparams
