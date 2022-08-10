@@ -27,7 +27,8 @@ class BWDataset(Dataset):
         df = df[-np.isnan(df.wigMax)]
         self.file = [os.path.join(cfg['data_dir'], x) for x in list(df.file)]
         self.csvname = label_csv
-        self.species = df.species.tolist()
+        self.species = [cfg['sp_dict'][x] for x in df.species.tolist()]
+        self.sp_dict = cfg['sp_dict']
         self.transform = transform
     
     def __len__(self):

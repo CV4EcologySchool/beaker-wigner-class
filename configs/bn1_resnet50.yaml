@@ -1,0 +1,26 @@
+# dataset params
+data_dir: './data'
+label_dir: '.'
+label_csv: {'train': 'PASCAL_BW_Train.csv',
+            'test': 'PASCAL_BW_Test.csv',
+            'val': 'PASCAL_BW_Val.csv'}
+sp_dict: {'ZC': 0,
+          'BB': 1,
+          'MS': 2,
+          'BW43': 3,
+          'BW37V': 4}
+# keeping num_classes as a separate arg in case we want to expand
+# the sp_dict and only use a subset
+num_classes: 5
+model_save_dir: 'model_states'
+
+# computer parameters
+seed: 11211988
+device: cuda
+num_workers: 1
+
+# training hyperparams
+learning_rate: 0.001
+weight_decay: 0.001
+batch_size: 1
+num_epochs: 5

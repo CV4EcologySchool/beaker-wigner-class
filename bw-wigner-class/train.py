@@ -1,17 +1,24 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Aug  5 16:09:47 2022
-
+TODO:
+    Update dataset to encode species as integer and
+    store that info somewhere
 @author: tnsak
 """
 from dataset import BWDataset
 from model import BeakerNet
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
+from torch.optim import SGD
 import os
 import torch.nn as nn
 from tqdm import trange
 import torch
+import glob
+import yaml
+import argparse
+from utils import init_seed
 
 def create_dataloader(cfg, transform, split='train'):
     '''
@@ -28,7 +35,77 @@ def create_dataloader(cfg, transform, split='train'):
         )
     return dataloader
 
+def load_model(cfg):
+    '''
+    creates a new model or loads existing if one found
+    '''
+    model = BeakerNet(cfg)
+    model_dir = cfg['model_save_dir']
+    model_states = glob.glob(model_dir + '/*.pt')
+    if len(model_states):
+        # found a save state
+        model_epochs = [int(m.replace(model_dir + '/','').replace('.pt','')) for m in model_states]
+        start_epoch = max(model_epochs)
+        # load state dict and apply weights to model
+        print(f'Resuming from epoch {start_epoch}')
+        state = torch.load(open(model_dir+f'/{start_epoch}.pt', 'rb'), map_location='cpu')
+        model.load_state_dict(state['model'])
+
+    else:
+        # no save state found; start anew
+        print('Starting new model')
+        start_epoch = 0
+
+    return model, start_epoch
+
+def save_model(cfg, epoch, model, stats):
+    # make sure save directory exists; create if not
+    model_dir = cfg['model_save_dir']
+    os.makedirs(model_dir, exist_ok=True)
+
+    # get model parameters and add to stats...
+    stats['model'] = model.state_dict()
+
+    # ...and save
+    torch.save(stats, open(model_dir + f'/{epoch}.pt', 'wb'))
+    
+    # also save config file if not present
+    cfpath = model_dir + '/config.yaml'
+    if not os.path.exists(cfpath):
+        with open(cfpath, 'w') as f:
+            yaml.dump(cfg, f)
+
+def setup_optimizer(cfg, model):
+    '''
+        The optimizer is what applies the gradients to the parameters and makes
+        the model learn on the dataset.
+    '''
+    optimizer = SGD(model.parameters(),
+                    lr=cfg['learning_rate'],
+                    weight_decay=cfg['weight_decay'])
+    return optimizer
+
+
 def train(cfg, dataloader, model, optimizer):
+    '''
+    train me models
+
+    Parameters
+    ----------
+    cfg : TYPE
+        DESCRIPTION.
+    dataloader : TYPE
+        DESCRIPTION.
+    model : TYPE
+        DESCRIPTION.
+    optimizer : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
     device = cfg['device']
     # send to device and set to train mode
     model.to(device)
@@ -75,11 +152,97 @@ def train(cfg, dataloader, model, optimizer):
     
     return(loss_total, oa_total)
     
+def validate(cfg, dataloader, model, optimizer):
+    device = cfg['device']
+    model = model.to(device)
+    model.eval()
+    criterion = nn.CrossEntropyLoss()
+    loss_total, oa_total = 0.0, 0,0
+    pb = trange(len(dataloader))
+    # this is so we dont calc gradient bc not needed for val
+    with torch.no_grad():
+        for idx, (data, label) in enumerate(dataloader):
+            data, label = data.to(device), label.to(device)
+            prediction = model(data)
+            loss = criterion(prediction, label)
+            
+            loss_total += loss.item()
+            
+            pred_label = torch.argmax(prediction, dim=1)
+            oa = torch.mean(pred_label == label).float()
+            oa_total += oa.item()
+            
+            pb.set_description(
+                '[Val] Loss: {:.2f}; OA: {:.2f}%'.format(
+                    loss_total / (idx + 1),
+                    100 * oa_total / (idx + 1)
+                    )
+                )
+            pb.update(1)
+    
+    pb.close()
+    loss_total /= len(dataloader)
+    oa_total /= len(dataloader)
+    
+    return(loss_total, oa_total)
     
 def main():
+    # set up command line argument parser for cfg file
+    parser = argparse.ArgumentParser(description='Train yo BeakerNet CLICK CLICK BOIIII')
+    parser.add_argument('--config', help='Path to config file', default='configs/bn1_resnet50.yaml')
+    args = parser.parse_args()
     
+    # load config
+    print(f'Using config "{args.config}"')
+    cfg = yaml.safe_load(open(args.config, 'r'))
+    
+    # init random number generator seed (set at the start)
+    # (note this tries to get from dict and has fail default)
+    init_seed(cfg.get('seed', None))
+    
+    device = cfg['device']
+    
+    if device != 'cpu' and not torch.cuda.is_available():
+        print(f'WARNING: device set to "{device}" but CUDA not available; falling back to CPU...')
+        cfg['device'] = 'cpu'
+
+
     trans_dict = {
         'train': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
+        'val': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
         'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()])
-                  }
-    heydog = 'dawgggg'
+        }
+       # initialize data loaders for training and validation set
+    dl_train = create_dataloader(cfg, trans_dict['train'], split='train')
+    dl_val = create_dataloader(cfg, trans_dict['val'], split='val')
+            
+    # initialize model
+    model, current_epoch = load_model(cfg)
+
+    # set up model optimizer
+    optim = setup_optimizer(cfg, model)
+
+    # we have everything now: data loaders, model, optimizer; let's do the epochs!
+    numEpochs = cfg['num_epochs']
+    
+    while current_epoch < numEpochs:
+        current_epoch += 1
+        print(f'Epoch {current_epoch}/{numEpochs}')
+
+        loss_train, oa_train = train(cfg, dl_train, model, optim)
+        loss_val, oa_val = validate(cfg, dl_val, model)
+
+        # combine stats and save
+        stats = {
+           'loss_train': loss_train,
+           'loss_val': loss_val,
+           'oa_train': oa_train,
+           'oa_val': oa_val
+        }
+        save_model(cfg, current_epoch, model, stats)
+   # WE DID IT BEAKERNET ONLINE
+    
+if __name__ == '__main__':
+    # This block only gets executed if you call the "train.py" script directly
+    # (i.e., "python ct_classifier/train.py").
+    main()
