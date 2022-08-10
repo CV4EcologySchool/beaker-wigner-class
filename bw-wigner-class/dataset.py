@@ -10,10 +10,11 @@ from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import yaml
 
 class BWDataset(Dataset):
     
-    def __init__(self, label_csv, data_dir='.', transform=Compose([ToPILImage(), Resize([224, 224]), ToTensor()])):
+    def __init__(self, cfg, label_csv, transform=Compose([ToPILImage(), Resize([224, 224]), ToTensor()])):
         '''
         Constructor for data loader, just loading in from file locs
         Also need to specify base dir of file paths since different
@@ -24,7 +25,7 @@ class BWDataset(Dataset):
         df = pd.read_csv(label_csv)
         # some files are NA bc I exported all w/o filtering, drop them now
         df = df[-np.isnan(df.wigMax)]
-        self.file = [os.path.join(data_dir, x) for x in list(df.file)]
+        self.file = [os.path.join(cfg['data_dir'], x) for x in list(df.file)]
         self.csvname = label_csv
         self.species = df.species.tolist()
         self.transform = transform
@@ -36,12 +37,12 @@ class BWDataset(Dataset):
         image = np.load(self.file[ix])
         # just repeating to fake RGB?
         image = np.repeat(image[..., np.newaxis], 3, -1)
-        print(image.shape)
+        # print(image.shape)
         label = self.species[ix]
         # make tensor
         if(self.transform):
             image = self.transform(image)
-        print(image.shape)
+        # print(image.shape)
         '''
         very unclear how I need to modify image input from uint8 nparray
         do lables need to be one-hot encoding??

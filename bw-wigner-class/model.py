@@ -21,7 +21,7 @@ from torchvision.models import resnet50
 
 class BeakerNet(nn.Module):
 
-    def __init__(self, num_classes):
+    def __init__(self, cfg):
         '''
             Constructor of the model. Here, we initialize the model's
             architecture (layers).
@@ -36,7 +36,7 @@ class BeakerNet(nn.Module):
         in_features = last_layer.in_features                            # number of input dimensions to last (classifier) layer
         self.feature_extractor.fc = nn.Identity()                       # discard last layer...
 
-        self.classifier = nn.Linear(in_features, num_classes)           # ...and create a new one
+        self.classifier = nn.Linear(in_features, cfg['num_classes'])           # ...and create a new one
     
 
     def forward(self, x):
