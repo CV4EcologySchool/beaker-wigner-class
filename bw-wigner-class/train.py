@@ -164,7 +164,7 @@ def validate(cfg, dataloader, model):
     model = model.to(device)
     model.eval()
     criterion = nn.CrossEntropyLoss()
-    loss_total, oa_total = 0.0, 0,0
+    loss_total, oa_total = 0.0, 0.0
     pb = trange(len(dataloader))
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
