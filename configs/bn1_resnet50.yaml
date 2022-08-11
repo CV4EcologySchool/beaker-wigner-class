@@ -17,11 +17,11 @@ model_save_dir: 'model_states'
 
 # computer parameters
 seed: 11211988
-device: cpu
-num_workers: 1
+device: cuda
+num_workers: 4
 
 # training hyperparams
 learning_rate: 0.001
 weight_decay: 0.001
-batch_size: 1
-num_epochs: 5
+batch_size: 128
+num_epochs: 200
