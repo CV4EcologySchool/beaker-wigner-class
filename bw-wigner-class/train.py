@@ -176,7 +176,7 @@ def validate(cfg, dataloader, model):
             loss_total += loss.item()
             
             pred_label = torch.argmax(prediction, dim=1)
-            oa = torch.mean(pred_label == label).float()
+            oa = torch.mean((pred_label == label).float())
             oa_total += oa.item()
             
             pb.set_description(
