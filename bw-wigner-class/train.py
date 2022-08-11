@@ -11,6 +11,7 @@ from model import BeakerNet
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
 from torch.optim import SGD
+from torch.utils.tensorboard import SummaryWriter
 import os
 import torch.nn as nn
 from tqdm import trange
@@ -158,7 +159,7 @@ def train(cfg, dataloader, model, optimizer):
     
     return(loss_total, oa_total)
     
-def validate(cfg, dataloader, model, optimizer):
+def validate(cfg, dataloader, model):
     device = cfg['device']
     model = model.to(device)
     model.eval()
@@ -221,15 +222,16 @@ def main():
     # initialize model
     model, current_epoch = load_model(cfg)
     # just jank to write on example model
-    # save_model(cfg, current_epoch, model, stats={
-    #    'loss_train': 1,
-    #    'loss_val': 2,
-    #    'oa_train': 3,
-    #    'oa_val': 4
-    # })
+    save_model(cfg, current_epoch, model, stats={
+        'loss_train': 0.0,
+        'loss_val': 0.0,
+        'oa_train': 0.0,
+        'oa_val': 0.0
+    })
     # set up model optimizer
     optim = setup_optimizer(cfg, model)
-
+    
+    writer = SummaryWriter()
     # we have everything now: data loaders, model, optimizer; let's do the epochs!
     numEpochs = cfg['num_epochs']
     
@@ -239,7 +241,10 @@ def main():
 
         loss_train, oa_train = train(cfg, dl_train, model, optim)
         loss_val, oa_val = validate(cfg, dl_val, model)
-
+        writer.add_scalar('Loss/Train', loss_train, current_epoch)
+        writer.add_scalar('OA/Train', oa_train, current_epoch)
+        writer.add_scalar('Loss/Val', loss_val, current_epoch)
+        writer.add_scalar('OA/Val', oa_val, current_epoch)
         # combine stats and save
         stats = {
            'loss_train': loss_train,
@@ -247,7 +252,9 @@ def main():
            'oa_train': oa_train,
            'oa_val': oa_val
         }
+        writer.flush()
         save_model(cfg, current_epoch, model, stats)
+    writer.close()
    # WE DID IT BEAKERNET ONLINE
     
 if __name__ == '__main__':
