@@ -20,12 +20,17 @@ import yaml
 import argparse
 from util import init_seed
 
-def create_dataloader(cfg, transform, split='train'):
+def create_dataloader(cfg, split='train'):
     '''
     create a dataloader for a dataset instance
     '''
     label_csv = os.path.join(cfg['label_dir'], cfg['label_csv'][split])
-    dataset = BWDataset(cfg, label_csv, transform)
+    trans_dict = {
+        'train': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
+        'val': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
+        'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()])
+        }
+    dataset = BWDataset(cfg, label_csv, trans_dict[split])
     
     dataloader = DataLoader(
         dataset=dataset,
@@ -207,18 +212,20 @@ def main():
         cfg['device'] = 'cpu'
 
 
-    trans_dict = {
-        'train': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
-        'val': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
-        'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()])
-        }
+    
        # initialize data loaders for training and validation set
-    dl_train = create_dataloader(cfg, trans_dict['train'], split='train')
-    dl_val = create_dataloader(cfg, trans_dict['val'], split='val')
+    dl_train = create_dataloader(cfg, split='train')
+    dl_val = create_dataloader(cfg, split='val')
             
     # initialize model
     model, current_epoch = load_model(cfg)
-
+    # just jank to write on example model
+    # save_model(cfg, current_epoch, model, stats={
+    #    'loss_train': 1,
+    #    'loss_val': 2,
+    #    'oa_train': 3,
+    #    'oa_val': 4
+    # })
     # set up model optimizer
     optim = setup_optimizer(cfg, model)
 
