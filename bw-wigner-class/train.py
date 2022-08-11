@@ -28,7 +28,8 @@ def create_dataloader(cfg, split='train'):
     trans_dict = {
         'train': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
         'val': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
-        'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()])
+        'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
+        'predict': Compose([ToPILImage(), Resize([224, 224]), ToTensor()])
         }
     dataset = BWDataset(cfg, label_csv, trans_dict[split])
     
