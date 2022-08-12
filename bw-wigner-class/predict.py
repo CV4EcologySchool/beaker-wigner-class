@@ -62,7 +62,7 @@ def predict(cfg, model):
             pb.update(1)
     
     pb.close()
-  
+    
     return(my_dict, pred_prob)
 
 def main():
@@ -77,6 +77,7 @@ def main():
     print(f'Using config "{args.config}"')
     cfg = yaml.safe_load(open(args.config, 'r'))
     pre_dict, probs = predict(cfg, args.model)
+    pre_dict['pred_label'] = pre_dict['pred_label'].tolist()
     cfg_base = re.sub('\\..*$', '', os.path.basename(args.config))
     mod_base = re.sub('\\..*$', '', os.path.basename(args.model))
     with open('preds_'+cfg_base+'_'+mod_base+'.txt', 'w') as file:
