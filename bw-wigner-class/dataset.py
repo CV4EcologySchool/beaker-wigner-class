@@ -7,6 +7,7 @@ Created on Fri Aug  5 16:09:25 2022
 import os
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
+from torchvision.utils import make_grid
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -56,12 +57,15 @@ class BWDataset(Dataset):
         image, label = self[ix]
         image = np.moveaxis(image.numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
         plt.imshow(np.flip(image))
-        plt.title('Species: ' + label + ' File: ' + os.path.basename(self.file[ix])) 
+        plt.title('Species: ' + str(label) + ' File: ' + os.path.basename(self.file[ix])) 
         plt.yticks(np.linspace(0, 128, 5), np.linspace(96, 0, 5))
         plt.ylabel('Frequency (kHz)')
         plt.show()
         
     def multiImg(self, ix, ncol=5):
+        '''
+        first attempt
+        '''
         nrow = int(np.ceil(len(ix)/ncol))
         fig, ax = plt.subplots(nrow, ncol)
         # fig = plt.figure()
@@ -80,4 +84,8 @@ class BWDataset(Dataset):
             # ax[row, col].margins(0.01, tight=True)
         # fig.tight_layout(pad=.05)
         fig.subplots_adjust(bottom=0, top=1, left=0, right=1)
+        '''
+        second attempt with torchvision grid
+        '''
+        
         
