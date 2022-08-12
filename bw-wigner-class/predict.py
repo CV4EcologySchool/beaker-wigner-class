@@ -14,6 +14,8 @@ import argparse
 import yaml
 import re
 import json
+from tqdm import trange
+import numpy as np
 
 def predict(cfg, model):
     
@@ -37,14 +39,14 @@ def predict(cfg, model):
         )
     
     my_dict = {'pred_label': [],
-               'pred_prob': [],
                'true_label': dataset.species,
                'sp_dict': dataset.sp_dict
         }
+    pred_prob = []
     # send to device and set to train mode
     model.to(device)
     model.eval()
-
+    pb = trange(len(dataloader))
     with torch.no_grad():
         for idx, (data, label) in enumerate(dataloader):
             # put on device for model speed
@@ -55,10 +57,13 @@ def predict(cfg, model):
             # what is proper way to accumulate these preds/probs
             my_dict['pred_label'].append(
                 torch.argmax(prediction, dim=1).detach().to('cpu').numpy())
-            my_dict['pred_prob'].append(
+            pred_prob.append(
                 torch.softmax(prediction, dim=1).detach().to('cpu').numpy())
+            pb.update(1)
+    
+    pb.close()
   
-    return(my_dict)
+    return(my_dict, pred_prob)
 
 def main():
     # set up command line argument parser for cfg file
@@ -71,11 +76,12 @@ def main():
     # load config
     print(f'Using config "{args.config}"')
     cfg = yaml.safe_load(open(args.config, 'r'))
-    pre_dict = predict(cfg, args.model)
+    pre_dict, probs = predict(cfg, args.model)
     cfg_base = re.sub('\\..*$', '', os.path.basename(args.config))
     mod_base = re.sub('\\..*$', '', os.path.basename(args.model))
     with open('preds_'+cfg_base+'_'+mod_base+'.txt', 'w') as file:
         file.write(json.dumps(pre_dict))
+    np.save('probs_'+cfg_base+'_'+mod_base, probs)
     
 if __name__ == '__main__':
     # This block only gets executed if you call the "train.py" script directly
