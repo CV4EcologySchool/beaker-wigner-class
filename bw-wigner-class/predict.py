@@ -39,8 +39,7 @@ def predict(cfg, model):
         )
     
     my_dict = {'pred_label': [],
-               'true_label': dataset.species,
-               'sp_dict': dataset.sp_dict
+               'true_label': dataset.species
         }
     pred_prob = []
     # send to device and set to train mode
@@ -62,6 +61,10 @@ def predict(cfg, model):
             pb.update(1)
     
     pb.close()
+    print(my_dict['pred_label'][0])
+    print(type(my_dict['pred_label'][0]))
+    print(pred_prob[0])
+    print(type(pred_prob[0]))
     
     return(my_dict, pred_prob)
 
@@ -77,11 +80,12 @@ def main():
     print(f'Using config "{args.config}"')
     cfg = yaml.safe_load(open(args.config, 'r'))
     pre_dict, probs = predict(cfg, args.model)
-    pre_dict['pred_label'] = pre_dict['pred_label'].tolist()
+    
     cfg_base = re.sub('\\..*$', '', os.path.basename(args.config))
     mod_base = re.sub('\\..*$', '', os.path.basename(args.model))
     with open('preds_'+cfg_base+'_'+mod_base+'.txt', 'w') as file:
         file.write(json.dumps(pre_dict))
+        
     np.save('probs_'+cfg_base+'_'+mod_base, probs)
     
 if __name__ == '__main__':
