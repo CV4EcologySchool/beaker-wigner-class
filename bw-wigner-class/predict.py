@@ -55,16 +55,16 @@ def predict(cfg, model):
             
             # what is proper way to accumulate these preds/probs
             my_dict['pred_label'].append(
-                torch.argmax(prediction, dim=1).detach().to('cpu').numpy())
+                torch.argmax(prediction, dim=1).detach().to('cpu').numpy().tolist())
             pred_prob.append(
                 torch.softmax(prediction, dim=1).detach().to('cpu').numpy())
             pb.update(1)
     
     pb.close()
-    print(my_dict['pred_label'][0])
-    print(type(my_dict['pred_label'][0]))
-    print(pred_prob[0])
-    print(type(pred_prob[0]))
+    # print(my_dict['pred_label'][0])
+    # print(type(my_dict['pred_label'][0]))
+    # print(pred_prob[0])
+    # print(type(pred_prob[0]))
     
     return(my_dict, pred_prob)
 
