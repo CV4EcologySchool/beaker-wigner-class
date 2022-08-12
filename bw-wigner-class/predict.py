@@ -86,7 +86,7 @@ def main():
     with open('preds_'+cfg_base+'_'+mod_base+'.txt', 'w') as file:
         file.write(json.dumps(pre_dict))
         
-    np.save('probs_'+cfg_base+'_'+mod_base, np.stack(probs))
+    np.save('probs_'+cfg_base+'_'+mod_base, np.concatenate(probs))
     
 if __name__ == '__main__':
     # This block only gets executed if you call the "train.py" script directly
