@@ -124,8 +124,8 @@ def train(cfg, dataloader, model, optimizer):
     
     # init running averages
     loss_total, oa_total = 0.0, 0.0
-    class_total = torch.zeros(cfg['num_species'])
-    class_count = torch.zeros(cfg['num_species'])
+    class_total = torch.zeros(cfg['num_classes'])
+    class_count = torch.zeros(cfg['num_classes'])
     pb = trange(len(dataloader))
     
     for idx, (data, label) in enumerate(dataloader):
@@ -173,8 +173,8 @@ def validate(cfg, dataloader, model):
     model.eval()
     criterion = nn.CrossEntropyLoss()
     loss_total, oa_total = 0.0, 0.0
-    class_total = torch.zeros(cfg['num_species'])
-    class_count = torch.zeros(cfg['num_species'])
+    class_total = torch.zeros(cfg['num_classes'])
+    class_count = torch.zeros(cfg['num_classes'])
     pb = trange(len(dataloader))
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
