@@ -38,8 +38,8 @@ def predict(cfg, model):
         shuffle=False
         )
     
-    my_dict = {'pred_label': [],
-               'true_label': dataset.species
+    my_dict = {'pred': [],
+               'true': np.array(dataset.species)
         }
     pred_prob = []
     # send to device and set to train mode
@@ -54,7 +54,7 @@ def predict(cfg, model):
             prediction = model(data)
             
             # what is proper way to accumulate these preds/probs
-            my_dict['pred_label'].append(
+            my_dict['pred'].extend(
                 torch.argmax(prediction, dim=1).detach().to('cpu').numpy().tolist())
             pred_prob.append(
                 torch.softmax(prediction, dim=1).detach().to('cpu').numpy())
@@ -65,9 +65,10 @@ def predict(cfg, model):
     # print(type(my_dict['pred_label'][0]))
     # print(pred_prob[0])
     # print(type(pred_prob[0]))
+    my_dict['pred'] = np.array(sum(my_dict['pred'], []))
+    pred_prob = np.concatenate(pred_prob)
+    return(my_dict, pred_prob)   
     
-    return(my_dict, pred_prob)
-
 def main():
     # set up command line argument parser for cfg file
     parser = argparse.ArgumentParser(description='Predict yo BeakerNet CLICK CLICK BOIIII')
@@ -86,7 +87,7 @@ def main():
     with open('preds_'+cfg_base+'_'+mod_base+'.txt', 'w') as file:
         file.write(json.dumps(pre_dict))
         
-    np.save('probs_'+cfg_base+'_'+mod_base, np.concatenate(probs))
+    np.save('probs_'+cfg_base+'_'+mod_base, probs)
     
 if __name__ == '__main__':
     # This block only gets executed if you call the "train.py" script directly

@@ -1,6 +1,6 @@
 # dataset params
 data_dir: '/datadrive/bwfolder/data'
-label_dir: '/datadrive/bwfolder'
+label_dir: '/datadrive/bwfolder/labels'
 label_csv: {'train': 'PASCAL_BW_Train.csv',
             'test': 'PASCAL_BW_Test.csv',
             'val': 'PASCAL_BW_Val.csv',
