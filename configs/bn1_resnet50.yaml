@@ -4,7 +4,7 @@ label_dir: '/datadrive/bwfolder'
 label_csv: {'train': 'PASCAL_BW_Train.csv',
             'test': 'PASCAL_BW_Test.csv',
             'val': 'PASCAL_BW_Val.csv',
-            'predict': 'PASCAL_Val.csv'}
+            'predict': 'PASCAL_BW_Val.csv'}
 sp_dict: {'ZC': 0,
           'BB': 1,
           'MS': 2,
