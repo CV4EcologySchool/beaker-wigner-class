@@ -150,13 +150,13 @@ def train(cfg, dataloader, model, optimizer):
             class_count[s] += torch.sum(label == s)
             class_total[s] += torch.sum(pred_label[label == s] == s)
          
-        cba = [x / max(y, 1) for x, y in zip(class_total, class_count)]
+        cba = [(x / max(y, 1)).cpu() for x, y in zip(class_total, class_count)]
         
         pb.set_description(
-            '[Train] Loss {:2f}; OA {:2f}%; CAvgAcc: {:.2f}%'.format(
+                '[Train] Loss {:.2f}; OA {:.2f}%; CBA: {:.2f}%'.format(
                 loss_total/(idx + 1),
                 100*oa_total/(idx + 1),
-                np.mean(cba)
+                100*np.mean(cba)
                 )
             )
         pb.update(1)
@@ -191,7 +191,7 @@ def validate(cfg, dataloader, model):
                 class_count[s] += torch.sum(label == s)
                 class_total[s] += torch.sum(pred_label[label == s] == s)
              
-            cba = [x / max(y, 1) for x, y in zip(class_total, class_count)]
+            cba = [(x / max(y, 1)).cpu() for x, y in zip(class_total, class_count)]
             oa_total += oa.item()
             
             pb.set_description(
@@ -261,18 +261,18 @@ def main():
         loss_val, oa_val, cba_val = validate(cfg, dl_val, model)
         writer.add_scalar('Loss/Train', loss_train, current_epoch)
         writer.add_scalar('OA/Train', oa_train, current_epoch)
-        writer.add_scalar('CBA/Train', cba_train, current_epoch)
+        writer.add_scalar('CBA/Train', np.mean(cba_train), current_epoch)
         writer.add_scalar('Loss/Val', loss_val, current_epoch)
         writer.add_scalar('OA/Val', oa_val, current_epoch)
-        writer.add_scalar('CBA/Val', cba_val, current_epoch)
+        writer.add_scalar('CBA/Val', np.mean(cba_val), current_epoch)
         # combine stats and save
         stats = {
            'loss_train': loss_train,
            'loss_val': loss_val,
            'oa_train': oa_train,
            'oa_val': oa_val,
-           'cba_train': cba_train,
-           'cba_val': cba_val
+           'cba_train': np.mean(cba_train),
+           'cba_val': np.mean(cba_val)
         }
         writer.flush()
         save_model(cfg, current_epoch, model, stats)
