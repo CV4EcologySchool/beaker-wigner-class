@@ -140,7 +140,7 @@ def train(cfg, dataloader, model, optimizer):
         loss.backward()
         
         optimizer.step()
-        
+    
         loss_total += loss.item()
         
         pred_label = torch.argmax(prediction, dim=1)
@@ -213,6 +213,7 @@ def main():
     # set up command line argument parser for cfg file
     parser = argparse.ArgumentParser(description='Train yo BeakerNet CLICK CLICK BOIIII')
     parser.add_argument('--config', help='Path to config file', default='configs/bn1_resnet50.yaml')
+
     args = parser.parse_args()
     
     # load config
