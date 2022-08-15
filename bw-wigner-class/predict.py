@@ -65,7 +65,7 @@ def predict(cfg, model):
     # print(type(my_dict['pred_label'][0]))
     # print(pred_prob[0])
     # print(type(pred_prob[0]))
-    my_dict['pred'] = np.array(sum(my_dict['pred'], []))
+    my_dict['pred'] = np.array(my_dict['pred'])
     pred_prob = np.concatenate(pred_prob)
     return(my_dict, pred_prob)   
     
@@ -84,9 +84,10 @@ def main():
     
     cfg_base = re.sub('\\..*$', '', os.path.basename(args.config))
     mod_base = re.sub('\\..*$', '', os.path.basename(args.model))
-    with open('preds_'+cfg_base+'_'+mod_base+'.txt', 'w') as file:
-        file.write(json.dumps(pre_dict))
-        
+    #with open('preds_'+cfg_base+'_'+mod_base+'.txt', 'w') as file:
+    #    file.write(json.dumps(pre_dict))
+    np.save('preds_'+cfg_base+'_'+mod_base, pre_dict['pred'])
+    np.save('true_'+cfg_base+'_'+mod_base, pre_dict['true'])
     np.save('probs_'+cfg_base+'_'+mod_base, probs)
     
 if __name__ == '__main__':
