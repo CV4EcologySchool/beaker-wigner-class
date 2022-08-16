@@ -10,6 +10,8 @@ sp_dict: {'ZC': 0,
           'MS': 2,
           'BW43': 3,
           'BW37V': 4}
+pred_test: False
+
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
