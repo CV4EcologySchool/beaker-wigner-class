@@ -127,8 +127,8 @@ def train(cfg, dataloader, model, optimizer):
     
     # init running averages
     loss_total, oa_total = 0.0, 0.0
-    class_total = torch.zeros(cfg['num_classes']).to(device)
-    class_count = torch.zeros(cfg['num_classes']).to(device)
+    class_total = torch.zeros(cfg['num_classes']).cpu()
+    class_count = torch.zeros(cfg['num_classes']).cpu()
     pb = trange(len(dataloader))
     
     for idx, (data, label) in enumerate(dataloader):
@@ -150,10 +150,10 @@ def train(cfg, dataloader, model, optimizer):
         oa = torch.mean((pred_label == label).float())
         oa_total += oa.item()
         for s in range(len(class_total)):
-            class_count[s] += torch.sum(label == s)
-            class_total[s] += torch.sum(pred_label[label == s] == s)
+            class_count[s] += torch.sum(label == s).cpu()
+            class_total[s] += torch.sum(pred_label[label == s] == s).cpu()
          
-        cba = [(x / max(y, 1)).cpu() for x, y in zip(class_total, class_count)]
+        cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
         
         pb.set_description(
                 '[Train] Loss {:.2f}; OA {:.2f}%; CBA: {:.2f}%'.format(
@@ -176,8 +176,9 @@ def validate(cfg, dataloader, model):
     model.eval()
     criterion = nn.CrossEntropyLoss()
     loss_total, oa_total = 0.0, 0.0
-    class_total = torch.zeros(cfg['num_classes']).to(device)
-    class_count = torch.zeros(cfg['num_classes']).to(device)
+    class_total = torch.zeros(cfg['num_classes']).cpu()
+    class_count = torch.zeros(cfg['num_classes']).cpu()
+
     pb = trange(len(dataloader))
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
@@ -189,12 +190,13 @@ def validate(cfg, dataloader, model):
             loss_total += loss.item()
             
             pred_label = torch.argmax(prediction, dim=1)
+            pred_score = torch.softmax(prediction, dim=1)
             oa = torch.mean((pred_label == label).float())
             for s in range(len(class_total)):
-                class_count[s] += torch.sum(label == s)
-                class_total[s] += torch.sum(pred_label[label == s] == s)
-             
-            cba = [(x / max(y, 1)).cpu() for x, y in zip(class_total, class_count)]
+                class_count[s] += torch.sum(label == s).cpu()
+                class_total[s] += torch.sum(pred_label[label == s] == s).cpu()
+            # do this way cuz no div0
+            cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
             oa_total += oa.item()
             
             pb.set_description(

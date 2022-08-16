@@ -76,21 +76,27 @@ def predict(cfg, model, label_csv):
     return(df)   
     
 def pred_plots(df, cfg, name):
+    outdir = cfg['pred_dir']
     # two confusion matrices
     cm_true = met.confusion_matrix(df.true, df.pred, normalize='true')
     cmd_true = met.ConfusionMatrixDisplay(cm_true)
     cm_pred = met.confusion_matrix(df.true, df.pred, normalize='pred')
     cmd_pred = met.ConfusionMatrixDisplay(cm_pred)
-    fig = plt.figure(figsize=(10, 5))
-    ax1 = plt.subplot(1, 2, 1)
+    cm_none = met.confusion_matrix(df.true, df.pred, normalize=None)
+    cmd_none = met.ConfusionMatrixDisplay(cm_none)
+    fig = plt.figure(figsize=(15, 5))
+    ax1 = plt.subplot(1, 2, 2)
     ax1.set_title('Norm across TRUE (Recall)')
     cmd_true.plot(ax=ax1)
-    ax2=plt.subplot(1, 2, 2)
+    ax2=plt.subplot(1, 3, 3)
     ax2.set_title('Norm across PRED (Precision)')
     cmd_pred.plot(ax=ax2)
-    plt.savefig('ConfMats_'+name+'.png')
-    # PR curve by species
+    ax3=plt.subplot(1, 3, 1)
+    ax3.set_title('Norm across NONE')
+    cmd_none.plot(ax=ax3)
+    plt.savefig(os.path.join(outdir, 'ConfMats_'+name+'.png'))
     
+    # PR curve by species
     plt.figure(figsize=(5,5))
     cmap = plt.get_cmap('Set2')
     inv_sp = {cfg['sp_dict'][x]: x for x in cfg['sp_dict']}
@@ -100,7 +106,49 @@ def pred_plots(df, cfg, name):
         plt.plot(p, r, color=cmap(i), label=inv_sp[i])
     # print(plt.rcParams['axes.prop_cycle'].by_key()['color'])
     plt.legend()
-    plt.savefig('PRCurve_'+name+'.png')
+    plt.savefig(os.path.join(outdir, 'PRCurve_'+name+'.png'))
+    
+    # best and worst images
+    top_true, top_false = get_top_n(df, cfg['plot_top_n'])
+    plot_top_n(top_true, cfg['plot_top_n'],
+               os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'Best_'+name+'.png'))
+    plot_top_n(top_false, cfg['plot_top_n'],
+               os.path.join(outdir, 'Top'+cfg['plot_top_n']+'Worst_'+name+'.png'))
+    
+def get_top_n(df, n_top=5):
+    top_true = []
+    top_false = []
+    classes = np.sort(df.true.unique())
+    for i in classes:
+        df = df.sort_values(by='p'+str(i), ascending=False)
+        top_true.append(df[(df.true == i) & (df.pred == i)].head(n_top))
+        top_false.append(df[(df.true != i) & (df.pred == i)].head(n_top))
+    
+    return(top_true, top_false)
+
+def plot_top_n(df, n_top, name='TopN.png'):
+    if type(df != list):
+        df = get_top_n(df, n_top)
+    
+    data_dir = './data/'
+    classes = np.sort(df.true.unique())
+    fsize = 10
+    plt.figure(figsize=(fsize * len(classes), fsize * len(df)))
+    fig, ax = plt.subplots(len(classes), len(df))
+    
+    for i, tf in enumerate(df):
+        for j in range(tf.shape[0]):
+            imfile = os.path.join(data_dir, tf.file.values[j])
+            ax[i, j].imshow(np.flip(np.load(imfile)))
+            ax[i, j].set_xticks([])
+            ax[i, j].set_yticks([])
+            # if j == 0:
+                # want to set Y label for only first
+                # ax[i, j].set_title()
+            # and then set label label for all to show misclass
+            # ax[i, j].set_title(inv_sp[i])
+    fig.tight_layout(pad=.01)
+    plt.savefig(name)
     
 def main():
     # set up command line argument parser for cfg file
@@ -132,6 +180,7 @@ def main():
         label_test = os.path.join(cfg['label_dir'], cfg['label_csv']['test'])
         pred_test = predict(cfg, args.model, label_test)
         pred_test.to_csv(re.sub('.csv', suff, label_test))
+        pred_plots(pred_test, cfg, 'val')
     
     # cfg_base = re.sub('\\..*$', '', os.path.basename(args.config))
     # mod_base = re.sub('\\..*$', '', os.path.basename(args.model))
