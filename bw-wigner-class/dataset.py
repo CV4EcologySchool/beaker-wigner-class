@@ -25,7 +25,9 @@ class BWDataset(Dataset):
         '''
         df = pd.read_csv(label_csv)
         # some files are NA bc I exported all w/o filtering, drop them now
-        df = df[-np.isnan(df.wigMax)]
+        for drop in cfg['check_na_col']:
+            df = df[-np.isnan(df[drop])]
+            
         self.file = [os.path.join(cfg['data_dir'], x) for x in list(df.file)]
         self.csvname = label_csv
         self.species = [cfg['sp_dict'][x] for x in df.species.tolist()]

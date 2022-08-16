@@ -11,6 +11,7 @@ sp_dict: {'ZC': 0,
           'BW43': 3,
           'BW37V': 4}
 pred_test: False
+check_na_col: ['wigMax', 'dBPP']
 
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
@@ -30,4 +31,4 @@ num_epochs: 200
 
 # plot params
 plot_top_n: 5
-pred_dir: 'export_preds
+pred_dir: 'export_preds'

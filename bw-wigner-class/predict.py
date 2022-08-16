@@ -109,22 +109,30 @@ def pred_plots(df, cfg, name):
     plt.savefig(os.path.join(outdir, 'PRCurve_'+name+'.png'))
     
     # best and worst images
-    top_true, top_false = get_top_n(df, cfg['plot_top_n'])
-    plot_top_n(top_true, cfg['plot_top_n'],
-               os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'Best_'+name+'.png'))
-    plot_top_n(top_false, cfg['plot_top_n'],
-               os.path.join(outdir, 'Top'+cfg['plot_top_n']+'Worst_'+name+'.png'))
+    top_tp, top_fp, top_fn = get_top_n(df, cfg['plot_top_n'])
+    plot_top_n(top_tp, cfg['plot_top_n'],
+               os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'TP_'+name+'.png'))
+    plot_top_n(top_fp, cfg['plot_top_n'],
+               os.path.join(outdir, 'Top'+cfg['plot_top_n']+'FP_'+name+'.png'))
+    plot_top_n(top_fn, cfg['plot_top_n'],
+               os.path.join(outdir, 'Top'+cfg['plot_top_n']+'FN_'+name+'.png'))
     
 def get_top_n(df, n_top=5):
-    top_true = []
-    top_false = []
+    top_tp = []
+    top_fp = []
+    top_fn = []
+    
     classes = np.sort(df.true.unique())
     for i in classes:
         df = df.sort_values(by='p'+str(i), ascending=False)
-        top_true.append(df[(df.true == i) & (df.pred == i)].head(n_top))
-        top_false.append(df[(df.true != i) & (df.pred == i)].head(n_top))
+        top_tp.append(df[(df.true == i) & (df.pred == i)].head(n_top))
+        top_fp.append(df[(df.true != i) & (df.pred == i)].head(n_top))
+        others = ['p'+str(x) for x in classes[classes != i]]
+        df['fn_sort'] = df[others].apply(max, axis=1)
+        df = df.sort_values(by='fn_sort', ascending=False)
+        top_fn.append(df[(df.true == i) & (df.pred != i)].head(n_top))
     
-    return(top_true, top_false)
+    return(top_tp, top_fp, top_fn)
 
 def plot_top_n(df, n_top, name='TopN.png'):
     if type(df != list):
