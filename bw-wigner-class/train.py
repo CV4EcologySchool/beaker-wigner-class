@@ -118,9 +118,12 @@ def train(cfg, dataloader, model, optimizer):
     # send to device and set to train mode
     model.to(device)
     model.train()
-    
+   
+    sp = dataloader.dataset.species
+    weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
+    weights = torch.FloatTensor(weights).to(device)
     # define loss function - MAY CHANGE LATER
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight = weights)
     
     # init running averages
     loss_total, oa_total = 0.0, 0.0
@@ -166,7 +169,7 @@ def train(cfg, dataloader, model, optimizer):
     oa_total /= len(dataloader)
     
     return(loss_total, oa_total, cba)
-    
+
 def validate(cfg, dataloader, model):
     device = cfg['device']
     model = model.to(device)
