@@ -50,7 +50,7 @@ def load_model(cfg):
     model = BeakerNet(cfg)
     model_dir = cfg['model_save_dir']
     model_states = glob.glob(model_dir + '/*.pt')
-    if len(model_states):
+    if (cfg['resume'] & len(model_states)):
         # found a save state
         model_epochs = [int(m.replace(model_dir + '/','').replace('.pt','')) for m in model_states]
         start_epoch = max(model_epochs)

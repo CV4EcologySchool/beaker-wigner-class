@@ -65,7 +65,9 @@ def predict(cfg, model, label_csv):
 
     df = pd.read_csv(label_csv)
     # some files are NA bc I exported all w/o filtering, drop them now
-    df = df[-np.isnan(df.wigMax)]
+    for drop in cfg['check_na_col']:
+        df = df[-np.isnan(df[drop])]
+
     df['pred'] = np.array(my_dict['pred'])
     df['true'] = my_dict['true']
     pred_prob = np.concatenate(pred_prob)
@@ -84,16 +86,20 @@ def pred_plots(df, cfg, name):
     cmd_pred = met.ConfusionMatrixDisplay(cm_pred)
     cm_none = met.confusion_matrix(df.true, df.pred, normalize=None)
     cmd_none = met.ConfusionMatrixDisplay(cm_none)
-    fig = plt.figure(figsize=(15, 5))
-    ax1 = plt.subplot(1, 2, 2)
+    fig = plt.figure(figsize=(10, 10))
+    ax1 = plt.subplot(2, 2, 3)
     ax1.set_title('Norm across TRUE (Recall)')
     cmd_true.plot(ax=ax1)
-    ax2=plt.subplot(1, 3, 3)
+    ax2=plt.subplot(2, 2, 4)
     ax2.set_title('Norm across PRED (Precision)')
     cmd_pred.plot(ax=ax2)
-    ax3=plt.subplot(1, 3, 1)
+    ax3=plt.subplot(2, 2, 2)
     ax3.set_title('Norm across NONE')
     cmd_none.plot(ax=ax3)
+    cl_rep = met.classification_report(df.true, df.pred)
+    ax4 = plt.subplot(2, 2, 1)
+    ax4.text(x=.08, y=.2, s=cl_rep)
+    ax4.axis('off')
     plt.savefig(os.path.join(outdir, 'ConfMats_'+name+'.png'))
     
     # PR curve by species
@@ -110,12 +116,15 @@ def pred_plots(df, cfg, name):
     
     # best and worst images
     top_tp, top_fp, top_fn = get_top_n(df, cfg['plot_top_n'])
-    plot_top_n(top_tp, cfg['plot_top_n'],
-               os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'TP_'+name+'.png'))
-    plot_top_n(top_fp, cfg['plot_top_n'],
-               os.path.join(outdir, 'Top'+cfg['plot_top_n']+'FP_'+name+'.png'))
-    plot_top_n(top_fn, cfg['plot_top_n'],
-               os.path.join(outdir, 'Top'+cfg['plot_top_n']+'FN_'+name+'.png'))
+    plot_top_n(top_tp, cfg,
+               os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'TP_'+name+'.png'),
+               lab_true = True, title = 'Predicted vs True')
+    plot_top_n(top_fp, cfg,
+               os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FP_'+name+'.png'),
+               lab_true = True, title = 'Predicted vs True')
+    plot_top_n(top_fn, cfg,
+            os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FN_'+name+'.png'),
+               lab_true = False, title='True vs Predicted')
     
 def get_top_n(df, n_top=5):
     top_tp = []
@@ -134,28 +143,39 @@ def get_top_n(df, n_top=5):
     
     return(top_tp, top_fp, top_fn)
 
-def plot_top_n(df, n_top, name='TopN.png'):
-    if type(df != list):
+def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title=''):
+    n_top = cfg['plot_top_n']
+    if type(df) != list:
         df = get_top_n(df, n_top)
     
-    data_dir = './data/'
-    classes = np.sort(df.true.unique())
+    inv_sp = {cfg['sp_dict'][x]: x for x in cfg['sp_dict']}
+    data_dir = cfg['data_dir']
+            
+    #classes = np.sort(np.array([x.true.values[0] for x in df if len(x) > 0]))
+    classes = range(cfg['num_classes'])
     fsize = 10
     plt.figure(figsize=(fsize * len(classes), fsize * len(df)))
     fig, ax = plt.subplots(len(classes), len(df))
     
     for i, tf in enumerate(df):
-        for j in range(tf.shape[0]):
-            imfile = os.path.join(data_dir, tf.file.values[j])
-            ax[i, j].imshow(np.flip(np.load(imfile)))
+        for j in range(n_top):
             ax[i, j].set_xticks([])
             ax[i, j].set_yticks([])
-            # if j == 0:
-                # want to set Y label for only first
-                # ax[i, j].set_title()
+            if j == 0:
+                ax[i, j].set_ylabel(inv_sp[i])
+            if j >= tf.shape[0]:
+                continue
+
+            imfile = os.path.join(data_dir, tf.file.values[j])
+            ax[i, j].imshow(np.flipud(np.load(imfile)))
+            sp_lab = tf.true.values[j] if lab_true else tf.pred.values[j]
+            ax[i, j].text(x=0, y=1, s=inv_sp[sp_lab], c='white', va='top')
             # and then set label label for all to show misclass
             # ax[i, j].set_title(inv_sp[i])
     fig.tight_layout(pad=.01)
+    if len(title):    
+        fig.suptitle(title)
+        fig.subplots_adjust(top=.9)
     plt.savefig(name)
     
 def main():
@@ -170,25 +190,32 @@ def main():
     print(f'Using config "{args.config}"')
     cfg = yaml.safe_load(open(args.config, 'r'))
     suff = '_' + args.name + 'pred.csv'
-    
+    outdir = cfg['pred_dir']
+    os.makedirs(outdir, exist_ok=True)
+
     # do pred on train
     label_train = os.path.join(cfg['label_dir'], cfg['label_csv']['train'])
     pred_train = predict(cfg, args.model, label_train)
-    pred_train.to_csv(re.sub('.csv', suff, label_train))
-    pred_plots(pred_train, cfg, 'train')
+    tcsv = os.path.join(outdir, re.sub('.csv', suff, 
+        os.path.basename(label_train)))
+    
+    pred_train.to_csv(tcsv)
+    pred_plots(pred_train, cfg, args.name+'_train')
     
     # do pred on val
     label_val = os.path.join(cfg['label_dir'], cfg['label_csv']['val'])
     pred_val = predict(cfg, args.model, label_val)
-    pred_val.to_csv(re.sub('.csv', suff, label_val))
-    pred_plots(pred_val, cfg, 'val')
+    pred_val.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
+        os.path.basename(label_val))))
+    pred_plots(pred_val, cfg, args.name+'_val')
     
     # only pred on test if we want to
     if cfg['pred_test']:
         label_test = os.path.join(cfg['label_dir'], cfg['label_csv']['test'])
         pred_test = predict(cfg, args.model, label_test)
-        pred_test.to_csv(re.sub('.csv', suff, label_test))
-        pred_plots(pred_test, cfg, 'val')
+        pred_test.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
+            os.path.basename(label_test))))
+        pred_plots(pred_test, cfg, args.name+'_test')
     
     # cfg_base = re.sub('\\..*$', '', os.path.basename(args.config))
     # mod_base = re.sub('\\..*$', '', os.path.basename(args.model))
