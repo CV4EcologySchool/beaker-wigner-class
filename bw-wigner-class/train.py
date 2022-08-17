@@ -134,7 +134,7 @@ def train(cfg, dataloader, model, optimizer):
     
     for idx, (data, label, wig) in enumerate(dataloader):
         # put on device for model speed
-        data, label = data.to(device), label.to(device)
+        data, label, wig = data.to(device), label.to(device), wig.to(device)
         # forward, beakernet!
         prediction = model(data, wig)
         # have to reste grads
@@ -184,7 +184,7 @@ def validate(cfg, dataloader, model):
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
         for idx, (data, label, wig) in enumerate(dataloader):
-            data, label = data.to(device), label.to(device)
+            data, label, wig = data.to(device), label.to(device), wig.to(device)
             prediction = model(data, wig)
             loss = criterion(prediction, label)
             
