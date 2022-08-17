@@ -18,6 +18,7 @@ TODO:
 
 import torch.nn as nn
 from torchvision.models import resnet18
+import torch
 
 class BeakerNet(nn.Module):
 
@@ -33,13 +34,15 @@ class BeakerNet(nn.Module):
         # replace the very last layer from the original, 1000-class output
         # ImageNet to a new one that outputs num_classes
         last_layer = self.feature_extractor.fc                          # tip: print(self.feature_extractor) to get info on how model is set up
-        in_features = last_layer.in_features                            # number of input dimensions to last (classifier) layer
+        # Adding 1 here for extra features
+        in_features = last_layer.in_features + 1                      # number of input dimensions to last (classifier) layer
+        
         self.feature_extractor.fc = nn.Identity()                       # discard last layer...
 
         self.classifier = nn.Linear(in_features, cfg['num_classes'])           # ...and create a new one
     
 
-    def forward(self, x):
+    def forward(self, x, extras):
         '''
             Forward pass. Here, we define how to apply our model. It's basically
             applying our modified ResNet-18 on the input tensor ("x") and then
@@ -47,7 +50,9 @@ class BeakerNet(nn.Module):
             num_classes prediction.
         '''
         # x.size(): [B x 3 x W x H]
-        features = self.feature_extractor(x)    # features.size(): [B x 512 x W x H]
+        features = self.feature_extractor(x)  # features.size(): [B x 512 x W x H]
+        # appending extra shit to end of features
+        features = torch.hstack([features, extras.unsqueeze(1)]).float()
         prediction = self.classifier(features)  # prediction.size(): [B x num_classes]
 
         return prediction

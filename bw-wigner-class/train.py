@@ -132,11 +132,11 @@ def train(cfg, dataloader, model, optimizer):
     class_count = torch.zeros(cfg['num_classes']).cpu()
     pb = trange(len(dataloader))
     
-    for idx, (data, label) in enumerate(dataloader):
+    for idx, (data, label, wig) in enumerate(dataloader):
         # put on device for model speed
         data, label = data.to(device), label.to(device)
         # forward, beakernet!
-        prediction = model(data)
+        prediction = model(data, wig)
         # have to reste grads
         optimizer.zero_grad()
         # calc loss and full send back
@@ -183,9 +183,9 @@ def validate(cfg, dataloader, model):
     pb = trange(len(dataloader))
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
-        for idx, (data, label) in enumerate(dataloader):
+        for idx, (data, label, wig) in enumerate(dataloader):
             data, label = data.to(device), label.to(device)
-            prediction = model(data)
+            prediction = model(data, wig)
             loss = criterion(prediction, label)
             
             loss_total += loss.item()
@@ -259,7 +259,7 @@ def main():
     writer = SummaryWriter()
     # we have everything now: data loaders, model, optimizer; let's do the epochs!
     numEpochs = cfg['num_epochs']
-    scheduler = StepLR(optim, step_size=8, gamma=0.1)
+    scheduler = StepLR(optim, step_size=cfg['lr_step_count'], gamma=cfg['lr_step'])
     while current_epoch < numEpochs:
         current_epoch += 1
         print(f'Epoch {current_epoch}/{numEpochs}')
