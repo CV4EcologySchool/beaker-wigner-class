@@ -5,6 +5,7 @@ Created on Fri Aug  5 16:09:25 2022
 @author: tnsak
 """
 import os
+import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
 from torchvision.utils import make_grid
@@ -33,6 +34,9 @@ class BWDataset(Dataset):
         self.species = [cfg['sp_dict'][x] for x in df.species.tolist()]
         self.sp_dict = cfg['sp_dict']
         self.transform = transform
+        self.wigMax = np.log(df.wigMax.values)
+        self.wigMax -= min(self.wigMax)
+        self.wigMax /= max(self.wigMax)
     
     def __len__(self):
         return len(self.file)
@@ -43,6 +47,7 @@ class BWDataset(Dataset):
         image = np.repeat(image[..., np.newaxis], 3, -1)
         # print(image.shape)
         label = self.species[ix]
+        wigMax = torch.tensor(self.wigMax[ix])
         # make tensor
         if(self.transform):
             image = self.transform(image)
@@ -53,7 +58,7 @@ class BWDataset(Dataset):
         Models are expecting RGB? But I have gray?
         Some SE answers say just repeat the channel 3 times
         '''
-        return image, label
+        return image, label, wigMax
     
     def showImg(self, ix):
         image, label = self[ix]
