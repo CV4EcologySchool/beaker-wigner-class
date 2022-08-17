@@ -21,6 +21,7 @@ import yaml
 import argparse
 from util import init_seed
 import numpy as np
+from torch.optim.lr_scheduler import StepLR
 
 def create_dataloader(cfg, split='train'):
     '''
@@ -258,13 +259,15 @@ def main():
     writer = SummaryWriter()
     # we have everything now: data loaders, model, optimizer; let's do the epochs!
     numEpochs = cfg['num_epochs']
-    
+    scheduler = StepLR(optim, step_size=8, gamma=0.1)
     while current_epoch < numEpochs:
         current_epoch += 1
         print(f'Epoch {current_epoch}/{numEpochs}')
 
         loss_train, oa_train, cba_train = train(cfg, dl_train, model, optim)
         loss_val, oa_val, cba_val = validate(cfg, dl_val, model)
+        
+        scheduler.step()
         writer.add_scalar('Loss/Train', loss_train, current_epoch)
         writer.add_scalar('OA/Train', oa_train, current_epoch)
         writer.add_scalar('CBA/Train', np.mean(cba_train), current_epoch)
