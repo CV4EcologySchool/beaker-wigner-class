@@ -125,6 +125,40 @@ def pred_plots(df, cfg, name):
     plot_top_n(top_fn, cfg,
             os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FN_'+name+'.png'),
                lab_true = False, title='True vs Predicted')
+
+def event_metrics(df, cfg, name):
+    ev = df.groupby('station').agg(
+        sump0 = ('p0', 'sum'),
+        sump1 = ('p1', 'sum'),
+        sump2 = ('p2', 'sum'),
+        sump3 = ('p3', 'sum'),
+        sump4 = ('p4', 'sum'),
+        true = ('true', 'median')).reset_index()
+
+    ev['pred'] = ev[['sump'+str(x) for x in range(5)]].apply(lambda x: np.argmax(x), axis=1)
+    outdir = cfg['pred_dir']
+    # two confusion matrices
+    cm_true = met.confusion_matrix(ev.true, ev.pred, normalize='true')
+    cmd_true = met.ConfusionMatrixDisplay(cm_true)
+    cm_pred = met.confusion_matrix(ev.true, ev.pred, normalize='pred')
+    cmd_pred = met.ConfusionMatrixDisplay(cm_pred)
+    cm_none = met.confusion_matrix(ev.true, ev.pred, normalize=None)
+    cmd_none = met.ConfusionMatrixDisplay(cm_none)
+    fig = plt.figure(figsize=(10, 10))
+    ax1 = plt.subplot(2, 2, 3)
+    ax1.set_title('Norm across TRUE (Recall)')
+    cmd_true.plot(ax=ax1)
+    ax2=plt.subplot(2, 2, 4)
+    ax2.set_title('Norm across PRED (Precision)')
+    cmd_pred.plot(ax=ax2)
+    ax3=plt.subplot(2, 2, 2)
+    ax3.set_title('Norm across NONE')
+    cmd_none.plot(ax=ax3)
+    cl_rep = met.classification_report(ev.true, ev.pred)
+    ax4 = plt.subplot(2, 2, 1)
+    ax4.text(x=.08, y=.2, s=cl_rep)
+    ax4.axis('off')
+    plt.savefig(os.path.join(outdir, 'EventConfMats_'+name+'.png'))
     
 def get_top_n(df, n_top=5):
     top_tp = []
@@ -201,13 +235,14 @@ def main():
     
     pred_train.to_csv(tcsv)
     pred_plots(pred_train, cfg, args.name+'_train')
-    
+    event_metrics(pred_train, cfg, args.name+'_train')
     # do pred on val
     label_val = os.path.join(cfg['label_dir'], cfg['label_csv']['val'])
     pred_val = predict(cfg, args.model, label_val)
     pred_val.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
         os.path.basename(label_val))))
     pred_plots(pred_val, cfg, args.name+'_val')
+    event_metrics(pred_val, cfg, args.name+'_val')
     
     # only pred on test if we want to
     if cfg['pred_test']:
@@ -216,6 +251,7 @@ def main():
         pred_test.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
             os.path.basename(label_test))))
         pred_plots(pred_test, cfg, args.name+'_test')
+        event_metrics(pred_val, cfg, args.name+'_test')
     
     # cfg_base = re.sub('\\..*$', '', os.path.basename(args.config))
     # mod_base = re.sub('\\..*$', '', os.path.basename(args.model))
