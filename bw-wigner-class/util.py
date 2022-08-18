@@ -49,4 +49,4 @@ class CrossEntSNR(nn.CrossEntropyLoss):
     def forward(self, x, target, snr_scale):
         ce = super().forward(x, target)
         ce = ce * snr_scale
-        return self._reduce(ce)
+        return ce.mean()
