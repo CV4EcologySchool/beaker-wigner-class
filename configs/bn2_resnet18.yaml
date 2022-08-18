@@ -18,7 +18,7 @@ extra_params: 1
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_states_blur7_2'
+model_save_dir: 'model_states_snr'
 
 # computer parameters
 seed: 11211988
@@ -42,7 +42,10 @@ pred_dir: 'export_preds'
 rndaff_transx: 0.0
 rndaff_fill: 0
 # set 1 to turn off
-gb_kernel: 7
+gb_kernel: 1
 gb_max: 2
+
+snr_scale_params: {'max_val': 30,
+                   'min_prob': .5}
 
 

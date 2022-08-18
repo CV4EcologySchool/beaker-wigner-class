@@ -41,3 +41,12 @@ class FocalLoss(nn.Module):
             return x.sum()
         else:
             return x
+
+class CrossEntSNR(nn.CrossEntropyLoss):
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, x, target, snr_scale):
+        ce = super().forward(x, target)
+        ce = ce * snr_scale
+        return self._reduce(ce)

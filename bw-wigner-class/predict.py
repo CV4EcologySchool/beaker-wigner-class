@@ -208,6 +208,7 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title=''):
             ax[i, j].imshow(np.flipud(np.load(imfile)))
             sp_lab = tf.true.values[j] if lab_true else tf.pred.values[j]
             ax[i, j].text(x=0, y=1, s=inv_sp[sp_lab], c='white', va='top')
+            ax[i, j].text(x=0, y=125, s='SNR '+str(round(tf.snr.values[j])), c='white', fontsize=8)
             # and then set label label for all to show misclass
             # ax[i, j].set_title(inv_sp[i])
     fig.tight_layout(pad=.01)
@@ -237,14 +238,14 @@ def main():
     tcsv = os.path.join(outdir, re.sub('.csv', suff, 
         os.path.basename(label_train)))
     
-    pred_train.to_csv(tcsv)
+    pred_train.to_csv(tcsv, index=False)
     pred_plots(pred_train, cfg, args.name+'_train')
     event_metrics(pred_train, cfg, args.name+'_train')
     # do pred on val
     label_val = os.path.join(cfg['label_dir'], cfg['label_csv']['val'])
     pred_val = predict(cfg, args.model, label_val)
     pred_val.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
-        os.path.basename(label_val))))
+        os.path.basename(label_val))), index=False)
     pred_plots(pred_val, cfg, args.name+'_val')
     event_metrics(pred_val, cfg, args.name+'_val')
     
@@ -253,7 +254,7 @@ def main():
         label_test = os.path.join(cfg['label_dir'], cfg['label_csv']['test'])
         pred_test = predict(cfg, args.model, label_test)
         pred_test.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
-            os.path.basename(label_test))))
+            os.path.basename(label_test))), index=False)
         pred_plots(pred_test, cfg, args.name+'_test')
         event_metrics(pred_val, cfg, args.name+'_test')
     

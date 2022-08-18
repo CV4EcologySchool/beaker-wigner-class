@@ -38,6 +38,10 @@ class BWDataset(Dataset):
         self.wigMax -= min(self.wigMax)
         self.wigMax /= max(self.wigMax)
         self.wigMax = self.wigMax[:, np.newaxis]
+        snr_par = cfg['snr_scale_params']
+        self.snr_scale = df.snr.values / snr_par['max_val'] \
+            * (1-snr_par['min_prob']) + snr_par['min_prob']
+        self.snr_scale[self.snr_scale > 1] = 1
     
     def __len__(self):
         return len(self.file)
@@ -60,10 +64,12 @@ class BWDataset(Dataset):
         Models are expecting RGB? But I have gray?
         Some SE answers say just repeat the channel 3 times
         '''
-        return image, label, extras
+        snr = self.snr_scale[ix]
+        
+        return image, label, snr, extras
     
     def showImg(self, ix):
-        image, label, extras = self[ix]
+        image, label, snr, extras = self[ix]
         image = np.moveaxis(image.numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
         plt.imshow(np.flip(image))
         plt.title('Species: ' + str(label) + ' File: ' + os.path.basename(self.file[ix])) 
@@ -81,7 +87,7 @@ class BWDataset(Dataset):
         # gs = fig.add_gridspec(int(np.ceil(len(ix)/ncol)), ncol, hspace=0, wspace=0)
         # ax = gs.subplots(sharex=True, sharey=True)
         for i, v in enumerate(ix):
-            im, lab, extra = self[v]
+            im, lab, snr, extra = self[v]
             im = np.moveaxis(im.numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
             im = np.flip(im)
             row = int(np.floor(i / ncol))

@@ -19,7 +19,7 @@ import torch
 import glob
 import yaml
 import argparse
-from util import init_seed
+from util import init_seed, CrossEntSNR
 import numpy as np
 from torch.optim.lr_scheduler import StepLR
 
@@ -133,16 +133,16 @@ def train(cfg, dataloader, model, optimizer):
     weights = torch.FloatTensor(weights).to(device)
     # define loss function - MAY CHANGE LATER
     criterion = nn.CrossEntropyLoss(weight = weights)
-    
+    criterion = CrossEntSNR()
     # init running averages
     loss_total, oa_total = 0.0, 0.0
     class_total = torch.zeros(cfg['num_classes']).cpu()
     class_count = torch.zeros(cfg['num_classes']).cpu()
     pb = trange(len(dataloader))
     
-    for idx, (data, label, extras) in enumerate(dataloader):
+    for idx, (data, label, snr, extras) in enumerate(dataloader):
         # put on device for model speed
-        data, label = data.to(device), label.to(device)
+        data, label, snr = data.to(device), label.to(device), snr.to(device)
         # forward, beakernet!
         if cfg['extra_params']:
             extras = extras.to(device)
@@ -152,7 +152,7 @@ def train(cfg, dataloader, model, optimizer):
         # have to reste grads
         optimizer.zero_grad()
         # calc loss and full send back
-        loss = criterion(prediction, label)
+        loss = criterion(prediction, label, snr)
         loss.backward()
         
         optimizer.step()
@@ -195,8 +195,8 @@ def validate(cfg, dataloader, model):
     pb = trange(len(dataloader))
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
-        for idx, (data, label, extras) in enumerate(dataloader):
-            data, label= data.to(device), label.to(device)
+        for idx, (data, label, snr, extras) in enumerate(dataloader):
+            data, label, snr = data.to(device), label.to(device), snr.to(device)
             if cfg['extra_params']:
                 extras = extras.to(device)
             else:
