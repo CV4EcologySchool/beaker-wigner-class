@@ -9,7 +9,7 @@ TODO:
 from dataset import BWDataset
 from model import BeakerNet
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
+from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage, RandomAffine
 from torch.optim import SGD
 from torch.utils.tensorboard import SummaryWriter
 import os
@@ -29,7 +29,12 @@ def create_dataloader(cfg, split='train'):
     '''
     label_csv = os.path.join(cfg['label_dir'], cfg['label_csv'][split])
     trans_dict = {
-        'train': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
+        'train': Compose([ToPILImage(), 
+                          Resize([224, 224]),
+                          RandomAffine(degrees=0,
+                                       translate=(cfg['rndaff_transx'], 0),
+                                       fill=cfg['rndaff_fill']),
+                          ToTensor()]),
         'val': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
         'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
         'predict': Compose([ToPILImage(), Resize([224, 224]), ToTensor()])
@@ -132,11 +137,15 @@ def train(cfg, dataloader, model, optimizer):
     class_count = torch.zeros(cfg['num_classes']).cpu()
     pb = trange(len(dataloader))
     
-    for idx, (data, label, wig) in enumerate(dataloader):
+    for idx, (data, label, extras) in enumerate(dataloader):
         # put on device for model speed
-        data, label, wig = data.to(device), label.to(device), wig.to(device)
+        data, label = data.to(device), label.to(device)
         # forward, beakernet!
-        prediction = model(data, wig)
+        if cfg['extra_params']:
+            extras = extras.to(device)
+        else:
+            extras = None
+        prediction = model(data, extras)
         # have to reste grads
         optimizer.zero_grad()
         # calc loss and full send back
@@ -183,9 +192,13 @@ def validate(cfg, dataloader, model):
     pb = trange(len(dataloader))
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
-        for idx, (data, label, wig) in enumerate(dataloader):
-            data, label, wig = data.to(device), label.to(device), wig.to(device)
-            prediction = model(data, wig)
+        for idx, (data, label, extras) in enumerate(dataloader):
+            data, label= data.to(device), label.to(device)
+            if cfg['extra_params']:
+                extras = extras.to(device)
+            else:
+                extras = None
+            prediction = model(data, extras)
             loss = criterion(prediction, label)
             
             loss_total += loss.item()

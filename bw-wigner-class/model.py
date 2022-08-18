@@ -35,7 +35,7 @@ class BeakerNet(nn.Module):
         # ImageNet to a new one that outputs num_classes
         last_layer = self.feature_extractor.fc                          # tip: print(self.feature_extractor) to get info on how model is set up
         # Adding 1 here for extra features
-        in_features = last_layer.in_features + 1                      # number of input dimensions to last (classifier) layer
+        in_features = last_layer.in_features + cfg['extra_params']                     # number of input dimensions to last (classifier) layer
         
         self.feature_extractor.fc = nn.Identity()                       # discard last layer...
 
@@ -52,7 +52,8 @@ class BeakerNet(nn.Module):
         # x.size(): [B x 3 x W x H]
         features = self.feature_extractor(x)  # features.size(): [B x 512 x W x H]
         # appending extra shit to end of features
-        features = torch.hstack([features, extras.unsqueeze(1)]).float()
+        if extras:
+            features = torch.hstack([features, extras.unsqueeze(1)]).float()
         prediction = self.classifier(features)  # prediction.size(): [B x num_classes]
 
         return prediction

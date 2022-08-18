@@ -61,7 +61,7 @@ class BWDataset(Dataset):
         return image, label, wigMax
     
     def showImg(self, ix):
-        image, label = self[ix]
+        image, label, extras = self[ix]
         image = np.moveaxis(image.numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
         plt.imshow(np.flip(image))
         plt.title('Species: ' + str(label) + ' File: ' + os.path.basename(self.file[ix])) 
@@ -79,7 +79,7 @@ class BWDataset(Dataset):
         # gs = fig.add_gridspec(int(np.ceil(len(ix)/ncol)), ncol, hspace=0, wspace=0)
         # ax = gs.subplots(sharex=True, sharey=True)
         for i, v in enumerate(ix):
-            im, lab = self[v]
+            im, lab, extra = self[v]
             im = np.moveaxis(im.numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
             im = np.flip(im)
             row = int(np.floor(i / ncol))

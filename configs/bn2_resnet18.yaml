@@ -14,11 +14,11 @@ sp_dict: {'ZC': 0,
 pred_test: False
 check_na_col: ['wigMax', 'dBPP']
 resume: True
-
+extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_states_wig'
+model_save_dir: 'model_states_raff20'
 
 # computer parameters
 seed: 11211988
@@ -35,4 +35,9 @@ num_epochs: 200
 
 # plot params
 plot_top_n: 5
-pred_dir: 'export_preds_wig'
+pred_dir: 'export_preds'
+
+# augmentation params
+rndaff_transx: 0.2
+rndaff_fill: 0
+
