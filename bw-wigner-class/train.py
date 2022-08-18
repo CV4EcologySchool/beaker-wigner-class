@@ -9,7 +9,7 @@ TODO:
 from dataset import BWDataset
 from model import BeakerNet
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage, RandomAffine
+from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage, RandomAffine, GaussianBlur
 from torch.optim import SGD
 from torch.utils.tensorboard import SummaryWriter
 import os
@@ -34,6 +34,9 @@ def create_dataloader(cfg, split='train'):
                           RandomAffine(degrees=0,
                                        translate=(cfg['rndaff_transx'], 0),
                                        fill=cfg['rndaff_fill']),
+                          GaussianBlur(kernel_size=(cfg['gb_kernel'],
+                                                    cfg['gb_kernel']),
+                                       sigma=(0.1, cfg['gb_max'])),
                           ToTensor()]),
         'val': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
         'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
