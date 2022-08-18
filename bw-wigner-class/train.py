@@ -22,6 +22,7 @@ import argparse
 from util import init_seed, CrossEntSNR
 import numpy as np
 from torch.optim.lr_scheduler import StepLR
+import sklearn.metrics as met
 
 def create_dataloader(cfg, split='train'):
     '''
@@ -128,16 +129,17 @@ def train(cfg, dataloader, model, optimizer):
     model.to(device)
     model.train()
    
-    sp = dataloader.dataset.species
+    sp = dataloader.dataset.species.cpu()
     weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
     weights = torch.FloatTensor(weights).to(device)
     # define loss function - MAY CHANGE LATER
-    criterion = nn.CrossEntropyLoss(weight = weights)
-    criterion = CrossEntSNR()
+    # criterion = nn.CrossEntropyLoss(weight = weights)
+    criterion = CrossEntSNR(weight=weights)
     # init running averages
     loss_total, oa_total = 0.0, 0.0
-    class_total = torch.zeros(cfg['num_classes']).cpu()
-    class_count = torch.zeros(cfg['num_classes']).cpu()
+    # class_total = torch.zeros(cfg['num_classes']).cpu()
+    # class_count = torch.zeros(cfg['num_classes']).cpu()
+    all_pred = np.empty(0).cpu()
     pb = trange(len(dataloader))
     
     for idx, (data, label, snr, extras) in enumerate(dataloader):
@@ -160,19 +162,20 @@ def train(cfg, dataloader, model, optimizer):
         loss_total += loss.item()
         
         pred_label = torch.argmax(prediction, dim=1)
+        all_pred = np.append(all_pred, pred_label.cpu().detach().numpy())
         oa = torch.mean((pred_label == label).float())
         oa_total += oa.item()
-        for s in range(len(class_total)):
-            class_count[s] += torch.sum(label == s).cpu()
-            class_total[s] += torch.sum(pred_label[label == s] == s).cpu()
+        # for s in range(len(class_total)):
+        #     class_count[s] += torch.sum(label == s).cpu()
+        #     class_total[s] += torch.sum(pred_label[label == s] == s).cpu()
          
-        cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
+        # cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
         
         pb.set_description(
-                '[Train] Loss {:.2f}; OA {:.2f}%; CBA: {:.2f}%'.format(
+                '[Train] Loss {:.2f}; OA {:.2f}%;'.format(
                 loss_total/(idx + 1),
-                100*oa_total/(idx + 1),
-                100*np.mean(cba)
+                100*oa_total/(idx + 1)
+                # 100*np.mean(cba)
                 )
             )
         pb.update(1)
@@ -181,17 +184,21 @@ def train(cfg, dataloader, model, optimizer):
     loss_total /= len(dataloader)
     oa_total /= len(dataloader)
     
-    return(loss_total, oa_total, cba)
+    return(loss_total, oa_total, all_pred)
 
 def validate(cfg, dataloader, model):
     device = cfg['device']
     model = model.to(device)
     model.eval()
-    criterion = nn.CrossEntropyLoss()
+    sp = dataloader.dataset.species.cpu()
+    weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
+    weights = torch.FloatTensor(weights).to(device)
+    # criterion = nn.CrossEntropyLoss(weight=weights)
+    criterion = CrossEntSNR(weight=weights)
     loss_total, oa_total = 0.0, 0.0
-    class_total = torch.zeros(cfg['num_classes']).cpu()
-    class_count = torch.zeros(cfg['num_classes']).cpu()
-
+    # class_total = torch.zeros(cfg['num_classes']).cpu()
+    # class_count = torch.zeros(cfg['num_classes']).cpu()
+    all_pred = np.empty(0).cpu()
     pb = trange(len(dataloader))
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
@@ -202,25 +209,26 @@ def validate(cfg, dataloader, model):
             else:
                 extras = None
             prediction = model(data, extras)
-            loss = criterion(prediction, label)
+            loss = criterion(prediction, label, snr)
             
             loss_total += loss.item()
             
             pred_label = torch.argmax(prediction, dim=1)
-            pred_score = torch.softmax(prediction, dim=1)
+            all_pred = np.append(all_pred, pred_label.cpu().numpy())
+            # pred_score = torch.softmax(prediction, dim=1)
             oa = torch.mean((pred_label == label).float())
-            for s in range(len(class_total)):
-                class_count[s] += torch.sum(label == s).cpu()
-                class_total[s] += torch.sum(pred_label[label == s] == s).cpu()
-            # do this way cuz no div0
-            cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
+            # for s in range(len(class_total)):
+            #     class_count[s] += torch.sum(label == s).cpu()
+            #     class_total[s] += torch.sum(pred_label[label == s] == s).cpu()
+            # # do this way cuz no div0
+            # cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
             oa_total += oa.item()
             
             pb.set_description(
-                '[Val] Loss: {:.2f}; OA: {:.2f}%; CBA: {:.2f}%'.format(
+                '[Val] Loss: {:.2f}; OA: {:.2f}%'.format(
                     loss_total / (idx + 1),
-                    100 * oa_total / (idx + 1),
-                    100 * np.mean(cba)
+                    100 * oa_total / (idx + 1)
+                    # 100 * np.mean(cba)
                     )
                 )
             pb.update(1)
@@ -229,7 +237,7 @@ def validate(cfg, dataloader, model):
     loss_total /= len(dataloader)
     oa_total /= len(dataloader)
     
-    return(loss_total, oa_total, cba)
+    return(loss_total, oa_total, all_pred)
     
 def main():
     # set up command line argument parser for cfg file
@@ -280,24 +288,38 @@ def main():
         current_epoch += 1
         print(f'Epoch {current_epoch}/{numEpochs}')
 
-        loss_train, oa_train, cba_train = train(cfg, dl_train, model, optim)
-        loss_val, oa_val, cba_val = validate(cfg, dl_val, model)
+        loss_train, oa_train, pred_train = train(cfg, dl_train, model, optim)
+        loss_val, oa_val, pred_val = validate(cfg, dl_val, model)
         
         scheduler.step()
-        writer.add_scalar('Loss/Train', loss_train, current_epoch)
-        writer.add_scalar('OA/Train', oa_train, current_epoch)
-        writer.add_scalar('CBA/Train', np.mean(cba_train), current_epoch)
-        writer.add_scalar('Loss/Val', loss_val, current_epoch)
-        writer.add_scalar('OA/Val', oa_val, current_epoch)
-        writer.add_scalar('CBA/Val', np.mean(cba_val), current_epoch)
+        cr_train = met.classification_report(dl_train.dataset.species, pred_train, output_dict=True)
+        cr_val = met.classification_report(dl_val.dataset.species, pred_val, output_dict=True)
+        t_rep = {y: 
+                 {x: cr_train[x][y] for x in ['0', '1', '2', '3', '4']}
+                 for y in ['precision','recall']}
+        v_rep = {y: 
+                 {x: cr_val[x][y] for x in ['0', '1', '2', '3', '4']}
+                 for y in ['precision','recall']}  
+        writer.add_scalars('Train/prec', t_rep['precision'], current_epoch)
+        writer.add_scalars('Val/prec', v_rep['precision'], current_epoch)
+        writer.add_scalars('Train/recall', t_rep['recall'], current_epoch)
+        writer.add_scalars('Val/recall', v_rep['recall'], current_epoch)
+        writer.add_scalar('Train/AvgPrec', cr_train['macro avg']['precision'], current_epoch)
+        writer.add_scalar('Val/AvgPrec', cr_val['macro avg']['precision'], current_epoch)
+        writer.add_scalar('Train/OA', oa_train, current_epoch)
+        writer.add_scalar('Train/Loss', loss_train, current_epoch)
+        # writer.add_scalar('CBA/Train', np.mean(cba_train), current_epoch)
+        writer.add_scalar('Val/OA', oa_val, current_epoch)
+        writer.add_scalar('Val/Loss', loss_val, current_epoch)
+        # writer.add_scalar('CBA/Val', np.mean(cba_val), current_epoch)
         # combine stats and save
         stats = {
            'loss_train': loss_train,
            'loss_val': loss_val,
            'oa_train': oa_train,
-           'oa_val': oa_val,
-           'cba_train': np.mean(cba_train),
-           'cba_val': np.mean(cba_val)
+           'oa_val': oa_val
+           # 'cba_train': np.mean(cba_train),
+           # 'cba_val': np.mean(cba_val)
         }
         writer.flush()
         save_model(cfg, current_epoch, model, stats)
