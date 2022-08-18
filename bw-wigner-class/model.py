@@ -52,8 +52,8 @@ class BeakerNet(nn.Module):
         # x.size(): [B x 3 x W x H]
         features = self.feature_extractor(x)  # features.size(): [B x 512 x W x H]
         # appending extra shit to end of features
-        if extras:
-            features = torch.hstack([features, extras.unsqueeze(1)]).float()
+        if extras is not None:
+            features = torch.hstack([features, extras]).float()
         prediction = self.classifier(features)  # prediction.size(): [B x num_classes]
 
         return prediction

@@ -37,6 +37,7 @@ class BWDataset(Dataset):
         self.wigMax = np.log(df.wigMax.values)
         self.wigMax -= min(self.wigMax)
         self.wigMax /= max(self.wigMax)
+        self.wigMax = self.wigMax[:, np.newaxis]
     
     def __len__(self):
         return len(self.file)
@@ -47,7 +48,8 @@ class BWDataset(Dataset):
         image = np.repeat(image[..., np.newaxis], 3, -1)
         # print(image.shape)
         label = self.species[ix]
-        wigMax = torch.tensor(self.wigMax[ix])
+        extras = torch.tensor(self.wigMax[ix])
+        # extras = torch.hstack([extras, extras])
         # make tensor
         if(self.transform):
             image = self.transform(image)
@@ -58,7 +60,7 @@ class BWDataset(Dataset):
         Models are expecting RGB? But I have gray?
         Some SE answers say just repeat the channel 3 times
         '''
-        return image, label, wigMax
+        return image, label, extras
     
     def showImg(self, ix):
         image, label, extras = self[ix]
