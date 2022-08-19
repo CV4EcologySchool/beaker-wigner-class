@@ -54,6 +54,7 @@ def create_dataloader(cfg, split='train'):
             shuffle = False
         else:
             shuffle = True
+            sampler = None
     else:
         sampler = None
         shuffle = False
