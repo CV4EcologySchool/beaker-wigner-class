@@ -192,8 +192,8 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title=''):
     #classes = np.sort(np.array([x.true.values[0] for x in df if len(x) > 0]))
     classes = range(cfg['num_classes'])
     fsize = 10
-    plt.figure(figsize=(fsize * len(classes), fsize * len(df)))
-    fig, ax = plt.subplots(len(classes), len(df))
+    plt.figure(figsize=(fsize * len(classes), fsize * len(df[0])))
+    fig, ax = plt.subplots(len(classes), len(df[0]))
     
     for i, tf in enumerate(df):
         for j in range(n_top):
