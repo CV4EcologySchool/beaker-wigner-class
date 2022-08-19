@@ -145,7 +145,7 @@ def train(cfg, dataloader, model, optimizer):
     model.train()
 
     if cfg['weighted_loss']:
-        sp = dataloader.dataset.species.cpu()
+        sp = dataloader.dataset.species
         weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
         weights = torch.FloatTensor(weights).to(device)
     else:
@@ -213,7 +213,7 @@ def validate(cfg, dataloader, model):
     model.eval()
 
     if cfg['weighted_loss']:
-        sp = dataloader.dataset.species.cpu()
+        sp = dataloader.dataset.species
         weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
         weights = torch.FloatTensor(weights).to(device)
     else:
