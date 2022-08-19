@@ -20,7 +20,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_states_clswt'
+model_save_dir: 'model_states_samplwts'
 
 # computer parameters
 seed: 11211988
@@ -36,7 +36,7 @@ batch_size: 128
 num_epochs: 50
 
 # plot params
-plot_top_n: 5
+plot_top_n: 10
 
 pred_dir: 'export_preds_base'
 
@@ -47,8 +47,8 @@ rndaff_fill: 0
 # set 1 to turn off
 gb_kernel: 1
 gb_max: 2
-weighted_sampler: False
-weighted_loss: True
+weighted_sampler: True
+weighted_loss: False
 # min prob 1 to turn off
 snr_scale_params: {'max_val': 30,
                    'min_prob': 1}

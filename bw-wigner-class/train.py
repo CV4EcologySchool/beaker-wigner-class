@@ -335,18 +335,18 @@ def main():
         writer.add_scalar('Val/AvgPrec', cr_val['macro avg']['precision'], current_epoch)
         writer.add_scalar('Train/OA', oa_train, current_epoch)
         writer.add_scalar('Train/Loss', loss_train, current_epoch)
-        # writer.add_scalar('CBA/Train', np.mean(cba_train), current_epoch)
+        writer.add_scalar('CBA/Train', cr_train['macro avg']['recall'], current_epoch)
         writer.add_scalar('Val/OA', oa_val, current_epoch)
         writer.add_scalar('Val/Loss', loss_val, current_epoch)
-        # writer.add_scalar('CBA/Val', np.mean(cba_val), current_epoch)
+        writer.add_scalar('CBA/Val', cr_val['macro avg']['recall'], current_epoch)
         # combine stats and save
         stats = {
            'loss_train': loss_train,
            'loss_val': loss_val,
            'oa_train': oa_train,
            'oa_val': oa_val
-           # 'cba_train': np.mean(cba_train),
-           # 'cba_val': np.mean(cba_val)
+            # 'cba_train': np.mean(cba_train),
+            # 'cba_val': np.mean(cba_val)
         }
         writer.flush()
         save_model(cfg, current_epoch, model, stats)
