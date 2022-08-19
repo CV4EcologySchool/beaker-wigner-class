@@ -1,7 +1,7 @@
 # trying a resnet18
 # dataset params
-# data_dir: '/datadrive/bwfolder/data'
-data_dir: './data'
+data_dir: '/datadrive/bwfolder/data'
+# data_dir: './data'
 label_dir: '/datadrive/bwfolder/labels'
 # label_dir: 'labels'
 label_csv: {'train': 'PASCAL_BW_Train.csv',
@@ -16,11 +16,11 @@ sp_dict: {'ZC': 0,
 pred_test: False
 check_na_col: ['wigMax', 'dBPP']
 resume: True
-extra_params: 1
+extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_states_snr'
+model_save_dir: 'model_states_clswt'
 
 # computer parameters
 seed: 11211988
@@ -37,7 +37,8 @@ num_epochs: 50
 
 # plot params
 plot_top_n: 5
-pred_dir: 'export_preds_localtest'
+
+pred_dir: 'export_preds_base'
 
 # augmentation params
 # set 0 to turn off
@@ -50,6 +51,6 @@ weighted_sampler: False
 weighted_loss: True
 # min prob 1 to turn off
 snr_scale_params: {'max_val': 30,
-                   'min_prob': .5}
+                   'min_prob': 1}
 
 

@@ -48,7 +48,7 @@ def predict(cfg, model, label_csv):
     model.eval()
     pb = trange(len(dataloader))
     with torch.no_grad():
-        for idx, (data, label, extras) in enumerate(dataloader):
+        for idx, (data, label, snr, extras) in enumerate(dataloader):
             # put on device for model speed
             data, label = data.to(device), label.to(device)
             if cfg['extra_params']:
