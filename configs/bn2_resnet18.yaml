@@ -1,9 +1,9 @@
 # trying a resnet18
 # dataset params
-# data_dir: '/datadrive/bwfolder/data'
-data_dir: './data'
-# label_dir: '/datadrive/bwfolder/labels'
-label_dir: 'labels'
+data_dir: '/datadrive/bwfolder/data'
+# data_dir: './data'
+label_dir: '/datadrive/bwfolder/labels'
+# label_dir: 'labels'
 label_csv: {'train': 'PASCAL_BW_Train.csv',
             'test': 'PASCAL_BW_Test.csv',
             'val': 'PASCAL_BW_Val.csv',
