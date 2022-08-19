@@ -217,6 +217,23 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title=''):
         fig.subplots_adjust(top=.9)
     plt.savefig(name)
     
+def do_pred_work(cfg, args, split='train', pred_df=None):
+    suff = '_' + args.name + 'pred.csv'
+    outdir = cfg['pred_dir']
+    os.makedirs(outdir, exist_ok=True)
+    
+    if pred_df is None:
+        label_csv = os.path.join(cfg['label_dir'], cfg['label_csv'][split])
+        pred_df = predict(cfg, args.model, label_csv)
+        out_csv = os.path.join(outdir, 
+                               re.sub('.csv', suff, os.path.basename(label_csv)))
+        pred_df.to_csv(out_csv, index=False)
+    else:
+        pred_df = pd.read_csv(pred_df)
+        
+    pred_plots(pred_df, cfg, args.name+'_'+split)
+    event_metrics(pred_df, cfg, args.name+'_'+split)
+    
 def main():
     # set up command line argument parser for cfg file
     parser = argparse.ArgumentParser(description='Predict yo BeakerNet CLICK CLICK BOIIII')
@@ -228,44 +245,42 @@ def main():
     # load config
     print(f'Using config "{args.config}"')
     cfg = yaml.safe_load(open(args.config, 'r'))
-    suff = '_' + args.name + 'pred.csv'
-    outdir = cfg['pred_dir']
-    os.makedirs(outdir, exist_ok=True)
-
+    # suff = '_' + args.name + 'pred.csv'
+    # outdir = cfg['pred_dir']
+    # os.makedirs(outdir, exist_ok=True)
+    if '.pt' in args.model:
+        do_list = ['train', 'val', 'test'] if cfg['pred_test'] else ['train', 'val']
+        for do in do_list:
+            do_pred_work(cfg, args, split=do)
+    elif '.csv' in args.model:
+        do_pred_work(cfg, args, split='', pred_df=args.model)
+        
     # do pred on train
-    label_train = os.path.join(cfg['label_dir'], cfg['label_csv']['train'])
-    pred_train = predict(cfg, args.model, label_train)
-    tcsv = os.path.join(outdir, re.sub('.csv', suff, 
-        os.path.basename(label_train)))
+    # label_train = os.path.join(cfg['label_dir'], cfg['label_csv']['train'])
+    # pred_train = predict(cfg, args.model, label_train)
+    # tcsv = os.path.join(outdir, re.sub('.csv', suff, 
+    #     os.path.basename(label_train)))
     
-    pred_train.to_csv(tcsv, index=False)
-    pred_plots(pred_train, cfg, args.name+'_train')
-    event_metrics(pred_train, cfg, args.name+'_train')
-    # do pred on val
-    label_val = os.path.join(cfg['label_dir'], cfg['label_csv']['val'])
-    pred_val = predict(cfg, args.model, label_val)
-    pred_val.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
-        os.path.basename(label_val))), index=False)
-    pred_plots(pred_val, cfg, args.name+'_val')
-    event_metrics(pred_val, cfg, args.name+'_val')
+    # pred_train.to_csv(tcsv, index=False)
+    # pred_plots(pred_train, cfg, args.name+'_train')
+    # event_metrics(pred_train, cfg, args.name+'_train')
+    # # do pred on val
+    # label_val = os.path.join(cfg['label_dir'], cfg['label_csv']['val'])
+    # pred_val = predict(cfg, args.model, label_val)
+    # pred_val.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
+    #     os.path.basename(label_val))), index=False)
+    # pred_plots(pred_val, cfg, args.name+'_val')
+    # event_metrics(pred_val, cfg, args.name+'_val')
     
     # only pred on test if we want to
-    if cfg['pred_test']:
-        label_test = os.path.join(cfg['label_dir'], cfg['label_csv']['test'])
-        pred_test = predict(cfg, args.model, label_test)
-        pred_test.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
-            os.path.basename(label_test))), index=False)
-        pred_plots(pred_test, cfg, args.name+'_test')
-        event_metrics(pred_val, cfg, args.name+'_test')
-    
-    # cfg_base = re.sub('\\..*$', '', os.path.basename(args.config))
-    # mod_base = re.sub('\\..*$', '', os.path.basename(args.model))
-    #with open('preds_'+cfg_base+'_'+mod_base+'.txt', 'w') as file:
-    #    file.write(json.dumps(pre_dict))
-    # np.save('preds_'+cfg_base+'_'+mod_base, pre_dict['pred'])
-    # np.save('true_'+cfg_base+'_'+mod_base, pre_dict['true'])
-    # np.save('probs_'+cfg_base+'_'+mod_base, probs
-    
+    # if cfg['pred_test']:
+    #     label_test = os.path.join(cfg['label_dir'], cfg['label_csv']['test'])
+    #     pred_test = predict(cfg, args.model, label_test)
+    #     pred_test.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
+    #         os.path.basename(label_test))), index=False)
+    #     pred_plots(pred_test, cfg, args.name+'_test')
+    #     event_metrics(pred_val, cfg, args.name+'_test')
+        
 if __name__ == '__main__':
     # This block only gets executed if you call the "train.py" script directly
     # (i.e., "python ct_classifier/train.py").

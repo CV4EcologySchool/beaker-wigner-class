@@ -8,7 +8,7 @@ TODO:
 """
 from dataset import BWDataset
 from model import BeakerNet
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage, RandomAffine, GaussianBlur
 from torch.optim import SGD
 from torch.utils.tensorboard import SummaryWriter
@@ -43,13 +43,27 @@ def create_dataloader(cfg, split='train'):
         'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
         'predict': Compose([ToPILImage(), Resize([224, 224]), ToTensor()])
         }
+    
     dataset = BWDataset(cfg, label_csv, trans_dict[split])
+    if split == 'train':
+        if cfg['weighted_sampler']:
+            sp = dataset.species
+            weights = np.array([len(sp)/sp.count(x) for x in range(cfg['num_classes'])])
+            samp_weight= weights[sp]
+            sampler = WeightedRandomSampler(samp_weight, len(samp_weight))
+            shuffle = False
+        else:
+            shuffle = True
+    else:
+        sampler = None
+        shuffle = False
     
     dataloader = DataLoader(
         dataset=dataset,
         batch_size=cfg['batch_size'],
         num_workers=cfg['num_workers'],
-        shuffle=True
+        shuffle=shuffle,
+        sampler=sampler
         )
     return dataloader
 
@@ -128,10 +142,12 @@ def train(cfg, dataloader, model, optimizer):
     # send to device and set to train mode
     model.to(device)
     model.train()
-   
-    sp = dataloader.dataset.species.cpu()
-    weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
-    weights = torch.FloatTensor(weights).to(device)
+    if cfg['weighted_loss']:
+        sp = dataloader.dataset.species.cpu()
+        weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
+        weights = torch.FloatTensor(weights).to(device)
+    else:
+        weights = torch.ones(cfg['num_classes']).to(device)
     # define loss function - MAY CHANGE LATER
     # criterion = nn.CrossEntropyLoss(weight = weights)
     criterion = CrossEntSNR(weight=weights)
@@ -190,9 +206,12 @@ def validate(cfg, dataloader, model):
     device = cfg['device']
     model = model.to(device)
     model.eval()
-    sp = dataloader.dataset.species.cpu()
-    weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
-    weights = torch.FloatTensor(weights).to(device)
+    if cfg['weighted_loss']:
+        sp = dataloader.dataset.species.cpu()
+        weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
+        weights = torch.FloatTensor(weights).to(device)
+    else:
+        weights = torch.ones(cfg['num_classes']).to(device)
     # criterion = nn.CrossEntropyLoss(weight=weights)
     criterion = CrossEntSNR(weight=weights)
     loss_total, oa_total = 0.0, 0.0
