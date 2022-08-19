@@ -129,7 +129,7 @@ def train(cfg, dataloader, model, optimizer):
     model.to(device)
     model.train()
    
-    sp = dataloader.dataset.species.cpu()
+    sp = dataloader.dataset.species
     weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
     weights = torch.FloatTensor(weights).to(device)
     # define loss function - MAY CHANGE LATER
@@ -139,11 +139,13 @@ def train(cfg, dataloader, model, optimizer):
     loss_total, oa_total = 0.0, 0.0
     # class_total = torch.zeros(cfg['num_classes']).cpu()
     # class_count = torch.zeros(cfg['num_classes']).cpu()
-    all_pred = np.empty(0).cpu()
+    all_pred = np.empty(0)
+    all_true = np.empty(0)
     pb = trange(len(dataloader))
     
     for idx, (data, label, snr, extras) in enumerate(dataloader):
         # put on device for model speed
+        all_true = np.append(all_true, label.cpu().detach().numpy())
         data, label, snr = data.to(device), label.to(device), snr.to(device)
         # forward, beakernet!
         if cfg['extra_params']:
@@ -162,7 +164,7 @@ def train(cfg, dataloader, model, optimizer):
         loss_total += loss.item()
         
         pred_label = torch.argmax(prediction, dim=1)
-        all_pred = np.append(all_pred, pred_label.cpu().detach().numpy())
+        all_pred = np.append(all_pred, pred_label.cpu().detach().int().numpy())
         oa = torch.mean((pred_label == label).float())
         oa_total += oa.item()
         # for s in range(len(class_total)):
@@ -184,13 +186,13 @@ def train(cfg, dataloader, model, optimizer):
     loss_total /= len(dataloader)
     oa_total /= len(dataloader)
     
-    return(loss_total, oa_total, all_pred)
+    return(loss_total, oa_total, all_pred, all_true)
 
 def validate(cfg, dataloader, model):
     device = cfg['device']
     model = model.to(device)
     model.eval()
-    sp = dataloader.dataset.species.cpu()
+    sp = dataloader.dataset.species
     weights = [len(sp)/sp.count(x) for x in range(cfg['num_classes'])]
     weights = torch.FloatTensor(weights).to(device)
     # criterion = nn.CrossEntropyLoss(weight=weights)
@@ -198,11 +200,13 @@ def validate(cfg, dataloader, model):
     loss_total, oa_total = 0.0, 0.0
     # class_total = torch.zeros(cfg['num_classes']).cpu()
     # class_count = torch.zeros(cfg['num_classes']).cpu()
-    all_pred = np.empty(0).cpu()
+    all_pred = np.empty(0)
+    all_true = np.empty(0)
     pb = trange(len(dataloader))
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
         for idx, (data, label, snr, extras) in enumerate(dataloader):
+            all_true = np.append(all_true, label.cpu().numpy())
             data, label, snr = data.to(device), label.to(device), snr.to(device)
             if cfg['extra_params']:
                 extras = extras.to(device)
@@ -214,7 +218,7 @@ def validate(cfg, dataloader, model):
             loss_total += loss.item()
             
             pred_label = torch.argmax(prediction, dim=1)
-            all_pred = np.append(all_pred, pred_label.cpu().numpy())
+            all_pred = np.append(all_pred, pred_label.cpu().int().numpy())
             # pred_score = torch.softmax(prediction, dim=1)
             oa = torch.mean((pred_label == label).float())
             # for s in range(len(class_total)):
@@ -237,7 +241,7 @@ def validate(cfg, dataloader, model):
     loss_total /= len(dataloader)
     oa_total /= len(dataloader)
     
-    return(loss_total, oa_total, all_pred)
+    return(loss_total, oa_total, all_pred, all_true)
     
 def main():
     # set up command line argument parser for cfg file
@@ -288,17 +292,16 @@ def main():
         current_epoch += 1
         print(f'Epoch {current_epoch}/{numEpochs}')
 
-        loss_train, oa_train, pred_train = train(cfg, dl_train, model, optim)
-        loss_val, oa_val, pred_val = validate(cfg, dl_val, model)
-        
+        loss_train, oa_train, pred_train, true_train = train(cfg, dl_train, model, optim)
+        loss_val, oa_val, pred_val, true_val = validate(cfg, dl_val, model)
         scheduler.step()
-        cr_train = met.classification_report(dl_train.dataset.species, pred_train, output_dict=True)
-        cr_val = met.classification_report(dl_val.dataset.species, pred_val, output_dict=True)
+        cr_train = met.classification_report(true_train, pred_train, output_dict=True)
+        cr_val = met.classification_report(true_val, pred_val, output_dict=True)
         t_rep = {y: 
-                 {x: cr_train[x][y] for x in ['0', '1', '2', '3', '4']}
+                 {str(x): cr_train[str(x)][y] for x in np.unique(true_train)}
                  for y in ['precision','recall']}
         v_rep = {y: 
-                 {x: cr_val[x][y] for x in ['0', '1', '2', '3', '4']}
+                 {str(x): cr_val[str(x)][y] for x in np.unique(true_val)}
                  for y in ['precision','recall']}  
         writer.add_scalars('Train/prec', t_rep['precision'], current_epoch)
         writer.add_scalars('Val/prec', v_rep['precision'], current_epoch)
