@@ -13,14 +13,14 @@ sp_dict: {'ZC': 0,
           'MS': 2,
           'BW43': 3,
           'BW37V': 4}
-pred_test: False
+pred_test: True
 check_na_col: ['wigMax', 'dBPP']
 resume: True
 extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_states_samplwts_ra30'
+model_save_dir: 'model_states_snrfilt5_lrstep'
 
 # computer parameters
 seed: 11211988
@@ -28,23 +28,23 @@ device: cuda
 num_workers: 4
 
 # training hyperparams
-learning_rate: 0.005
+learning_rate: 0.01
 weight_decay: 0.001
 lr_step_count: 8
-lr_step: 1
+lr_step: .5
 batch_size: 128
 num_epochs: 50
 
 # plot params
-plot_top_n: 10
+plot_top_n: 5
 
-pred_dir: 'export_preds_base'
+pred_dir: 'export_preds_snrfilt5_lrstep'
 
 # augmentation params
 # set 0 to turn off
-rndaff_transx: 0.3
+rndaff_transx: 0
 rndaff_fill: 0
-# set 1 to turn off
+# set 1 to turn off 7 standard
 gb_kernel: 1
 gb_max: 2
 weighted_sampler: False
@@ -52,5 +52,7 @@ weighted_loss: True
 # min prob 1 to turn off
 snr_scale_params: {'max_val': 30,
                    'min_prob': 1}
+# set to like -10 to turn off
+snr_filt_min: 5
 
 

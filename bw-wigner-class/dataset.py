@@ -28,7 +28,7 @@ class BWDataset(Dataset):
         # some files are NA bc I exported all w/o filtering, drop them now
         for drop in cfg['check_na_col']:
             df = df[-np.isnan(df[drop])]
-            
+        df = df[df.snr > cfg['snr_filt_min']]    
         self.file = [os.path.join(cfg['data_dir'], x) for x in list(df.file)]
         self.csvname = label_csv
         self.species = [cfg['sp_dict'][x] for x in df.species.tolist()]

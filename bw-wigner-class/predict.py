@@ -71,7 +71,8 @@ def predict(cfg, model, label_csv):
     # some files are NA bc I exported all w/o filtering, drop them now
     for drop in cfg['check_na_col']:
         df = df[-np.isnan(df[drop])]
-
+    df = df[df.snr > cfg['snr_filt_min']]
+    
     df['pred'] = np.array(my_dict['pred'])
     df['true'] = my_dict['true']
     pred_prob = np.concatenate(pred_prob)
@@ -191,9 +192,9 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title=''):
             
     #classes = np.sort(np.array([x.true.values[0] for x in df if len(x) > 0]))
     classes = range(cfg['num_classes'])
-    fsize = 10
-    plt.figure(figsize=(fsize * len(classes), fsize * len(df[0])))
-    fig, ax = plt.subplots(len(classes), len(df[0]))
+    fsize = 1.5
+    # plt.figure(figsize=(fsize * len(classes), fsize * n_top))
+    fig, ax = plt.subplots(len(classes), n_top, figsize=(fsize*len(classes)+.5, fsize * n_top))
     
     for i, tf in enumerate(df):
         for j in range(n_top):
@@ -215,7 +216,7 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title=''):
     if len(title):    
         fig.suptitle(title)
         fig.subplots_adjust(top=.9)
-    plt.savefig(name)
+    fig.savefig(name)
     
 def do_pred_work(cfg, args, split='train', pred_df=None):
     suff = '_' + args.name + 'pred.csv'
