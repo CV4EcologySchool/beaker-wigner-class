@@ -7,7 +7,7 @@ Created on Fri Aug  5 16:09:25 2022
 import os
 import torch
 from torch.utils.data import Dataset
-from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
+from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage, Grayscale
 from torchvision.utils import make_grid
 import numpy as np
 import pandas as pd
@@ -48,6 +48,7 @@ class BWDataset(Dataset):
     
     def __getitem__(self, ix):
         image = np.load(self.file[ix])
+        # image = image - (np.median(image)-127)
         # just repeating to fake RGB?
         image = np.repeat(image[..., np.newaxis], 3, -1)
         # print(image.shape)
@@ -70,8 +71,9 @@ class BWDataset(Dataset):
     
     def showImg(self, ix):
         image, label, snr, extras = self[ix]
-        image = np.moveaxis(image.numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
-        plt.imshow(np.flip(image))
+        # image = np.moveaxis(image.numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
+        image = Grayscale(1)(image).numpy().squeeze(0)
+        plt.imshow(np.flipud(image))
         plt.title('Species: ' + str(label) + ' File: ' + os.path.basename(self.file[ix])) 
         plt.yticks(np.linspace(0, 128, 5), np.linspace(96, 0, 5))
         plt.ylabel('Frequency (kHz)')

@@ -9,6 +9,10 @@ import torch
 from torch.backends import cudnn
 import torch.nn as nn
 import numpy as np
+import os
+import matplotlib.pyplot as plt
+from torchvision.transforms import Compose, Resize, ToPILImage, ToTensor
+from model import BeakerNet
 
 def init_seed(seed):
     if seed is not None:
@@ -50,3 +54,41 @@ class CrossEntSNR(nn.CrossEntropyLoss):
         ce = super().forward(x, target)
         ce = ce * snr_scale
         return ce.mean()
+
+# df from predictions, model .pt
+def get_saliency(df, cfg, model):
+    if isinstance(model, str):
+        state = torch.load(open(model, 'rb'), map_location='cpu')
+        model = BeakerNet(cfg)
+        model.load_state_dict(state['model'])
+    
+    model.eval()
+    fsize=1.5
+    sal_out = []
+    # fig, ax = plt.subplots(len(df), 2, figsize=(fsize*2, fsize*len(df)), squeeze=False)
+    for i, v in enumerate(df.itertuples(index=False)):
+        image = np.load(os.path.join(cfg['data_dir'], v.file))
+        # basic transforms for pred
+        image = np.repeat(image[..., np.newaxis], 3, -1)
+        image = Compose([ToPILImage(), Resize([224, 224]), ToTensor()])(image)
+        # 
+        image.requires_grad_()
+        # none is for extras
+        pred = model(image.unsqueeze(0), None)
+        
+        score_max_index = pred.argmax()
+        score_max = pred[0,score_max_index]
+        score_max.backward()
+        
+        saliency, _ = torch.max(image.grad.data.abs(),dim=0)
+        sal_out.append(np.flipud(saliency.numpy()))
+        # saliency[0] is the shit
+    #     image = np.moveaxis(image.detach().numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
+    #     ax[i,0].imshow(np.flipud(image))
+    #     ax[i,0].axis('off')
+    #     print(saliency.shape)
+    #     ax[i,1].imshow(np.flipud(saliency.numpy()), cmap=plt.cm.hot)
+    #     ax[i,1].axis('off')
+    # fig.tight_layout(pad=.01)
+    # fig.show()
+    return(sal_out)

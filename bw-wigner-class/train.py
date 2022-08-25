@@ -9,7 +9,7 @@ TODO:
 from dataset import BWDataset
 from model import BeakerNet
 from torch.utils.data import DataLoader, WeightedRandomSampler
-from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage, RandomAffine, GaussianBlur
+from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage, RandomAffine, GaussianBlur, Normalize
 from torch.optim import SGD
 from torch.utils.tensorboard import SummaryWriter
 import os
@@ -28,7 +28,13 @@ def create_dataloader(cfg, split='train'):
     '''
     create a dataloader for a dataset instance
     '''
+    
     label_csv = os.path.join(cfg['label_dir'], cfg['label_csv'][split])
+    base_trans = Compose([ToPILImage(), 
+                    Resize([224, 224]), 
+                    ToTensor(),
+                    Normalize(mean=cfg['norm_mean'],
+                                        std=cfg['norm_sd'])])
     trans_dict = {
         'train': Compose([ToPILImage(), 
                           Resize([224, 224]),
@@ -38,10 +44,12 @@ def create_dataloader(cfg, split='train'):
                           GaussianBlur(kernel_size=(cfg['gb_kernel'],
                                                     cfg['gb_kernel']),
                                        sigma=(0.1, cfg['gb_max'])),
-                          ToTensor()]),
-        'val': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
-        'test': Compose([ToPILImage(), Resize([224, 224]), ToTensor()]),
-        'predict': Compose([ToPILImage(), Resize([224, 224]), ToTensor()])
+                          ToTensor(),
+                          Normalize(mean=cfg['norm_mean'],
+                                              std=cfg['norm_sd'])]),
+        'val': base_trans,
+        'test': base_trans,
+        'predict': base_trans
         }
     
     dataset = BWDataset(cfg, label_csv, trans_dict[split])

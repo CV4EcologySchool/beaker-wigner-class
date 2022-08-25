@@ -248,40 +248,14 @@ def main():
     cfg = yaml.safe_load(open(args.config, 'r'))
     # suff = '_' + args.name + 'pred.csv'
     # outdir = cfg['pred_dir']
-    # os.makedirs(outdir, exist_ok=True)
+    # os.makedirs(outdir, exist_ok=True) 
     if '.pt' in args.model:
         do_list = ['train', 'val', 'test'] if cfg['pred_test'] else ['train', 'val']
         for do in do_list:
             do_pred_work(cfg, args, split=do)
     elif '.csv' in args.model:
         do_pred_work(cfg, args, split='', pred_df=args.model)
-        
-    # do pred on train
-    # label_train = os.path.join(cfg['label_dir'], cfg['label_csv']['train'])
-    # pred_train = predict(cfg, args.model, label_train)
-    # tcsv = os.path.join(outdir, re.sub('.csv', suff, 
-    #     os.path.basename(label_train)))
-    
-    # pred_train.to_csv(tcsv, index=False)
-    # pred_plots(pred_train, cfg, args.name+'_train')
-    # event_metrics(pred_train, cfg, args.name+'_train')
-    # # do pred on val
-    # label_val = os.path.join(cfg['label_dir'], cfg['label_csv']['val'])
-    # pred_val = predict(cfg, args.model, label_val)
-    # pred_val.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
-    #     os.path.basename(label_val))), index=False)
-    # pred_plots(pred_val, cfg, args.name+'_val')
-    # event_metrics(pred_val, cfg, args.name+'_val')
-    
-    # only pred on test if we want to
-    # if cfg['pred_test']:
-    #     label_test = os.path.join(cfg['label_dir'], cfg['label_csv']['test'])
-    #     pred_test = predict(cfg, args.model, label_test)
-    #     pred_test.to_csv(os.path.join(outdir, re.sub('.csv', suff, 
-    #         os.path.basename(label_test))), index=False)
-    #     pred_plots(pred_test, cfg, args.name+'_test')
-    #     event_metrics(pred_val, cfg, args.name+'_test')
-        
+               
 if __name__ == '__main__':
     # This block only gets executed if you call the "train.py" script directly
     # (i.e., "python ct_classifier/train.py").

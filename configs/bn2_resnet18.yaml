@@ -20,7 +20,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_states_snrfilt5_lrstep'
+model_save_dir: 'model_states_snrfilt5_lrstep_norm.5'
 
 # computer parameters
 seed: 11211988
@@ -38,7 +38,7 @@ num_epochs: 50
 # plot params
 plot_top_n: 5
 
-pred_dir: 'export_preds_snrfilt5_lrstep'
+pred_dir: 'export_preds_snrfilt5_lrstep_norm.5'
 
 # augmentation params
 # set 0 to turn off
@@ -49,6 +49,9 @@ gb_kernel: 1
 gb_max: 2
 weighted_sampler: False
 weighted_loss: True
+# 0, 1 for nothing
+norm_mean: [.5, .5, .5]
+norm_sd: [1, 1, 1]
 # min prob 1 to turn off
 snr_scale_params: {'max_val': 30,
                    'min_prob': 1}
