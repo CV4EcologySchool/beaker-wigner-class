@@ -55,43 +55,38 @@ class CrossEntSNR(nn.CrossEntropyLoss):
         ce = ce * snr_scale
         return ce.mean()
 
-# df from predictions, model .pt
+# df is dataframe of predictions, model is .pt
 def get_saliency(df, cfg, model):
+    # load .pt file as BeakerNet
     if isinstance(model, str):
         state = torch.load(open(model, 'rb'), map_location='cpu')
         model = BeakerNet(cfg)
         model.load_state_dict(state['model'])
     
     model.eval()
-    fsize=1.5
     sal_out = []
-    # fig, ax = plt.subplots(len(df), 2, figsize=(fsize*2, fsize*len(df)), squeeze=False)
+    # loop through each row of DF and load file to predict on
     for i, v in enumerate(df.itertuples(index=False)):
+        # loading image - 128x128 nparray, single channel
         image = np.load(os.path.join(cfg['data_dir'], v.file))
-        # basic transforms for pred
+        # basic transforms for pred - faking RGB by repeating 3 times
         image = np.repeat(image[..., np.newaxis], 3, -1)
         image = Compose([ToPILImage(), 
                          Resize([224, 224]), ToTensor(),
                          Normalize(mean=cfg['norm_mean'],
                                              std=cfg['norm_sd'])])(image)
-        # 
         image.requires_grad_()
-        # none is for extras
+        # none is for extras spot - put in real verison later if i have extras
+        # need unsqueeze to fake batch of 1
         pred = model(image.unsqueeze(0), None)
         
+        # direct copy from Medium article
         score_max_index = pred.argmax()
         score_max = pred[0,score_max_index]
         score_max.backward()
-        
         saliency, _ = torch.max(image.grad.data.abs(),dim=0)
+        
+        # flipud makes image look right
         sal_out.append(np.flipud(saliency.numpy()))
-        # saliency[0] is the shit
-    #     image = np.moveaxis(image.detach().numpy()*255, 0, -1).astype(np.uint8)[:,:,0]
-    #     ax[i,0].imshow(np.flipud(image))
-    #     ax[i,0].axis('off')
-    #     print(saliency.shape)
-    #     ax[i,1].imshow(np.flipud(saliency.numpy()), cmap=plt.cm.hot)
-    #     ax[i,1].axis('off')
-    # fig.tight_layout(pad=.01)
-    # fig.show()
+
     return(sal_out)
