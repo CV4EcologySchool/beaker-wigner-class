@@ -239,8 +239,9 @@ def do_pred_work(cfg, args, split='train', pred_df=None):
         pred_df.to_csv(out_csv, index=False)
     else:
         pred_df = pd.read_csv(pred_df)
+        cfg['do_sal'] = False
         
-    pred_plots(pred_df, cfg, args.name+'_'+split)
+    pred_plots(pred_df, cfg, args.name+'_'+split, args.model)
     event_metrics(pred_df, cfg, args.name+'_'+split)
     
 def main():
