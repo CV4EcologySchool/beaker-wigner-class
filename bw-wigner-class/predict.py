@@ -200,7 +200,7 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', sal=False, mo
     fsize = 1.5
     # plt.figure(figsize=(fsize * len(classes), fsize * n_top))
     fig, ax = plt.subplots(len(classes), n_top*(1+sal), 
-                           figsize=(fsize*len(classes)*(1+sal)+.5, fsize * n_top))
+                           figsize=(fsize*n_top*(1+sal)+.25, fsize * len(classes)+.5))
     
     for i, tf in enumerate(df):
         if sal:
@@ -208,17 +208,20 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', sal=False, mo
             # fix all Js here
         for j in range(n_top):
             use_j = j * (1+sal)
-            ax[i, use_j].axis('off')
+            ax[i, use_j].set_xticks([])
+            ax[i, use_j].set_yticks([])
             if sal:
-                ax[i, use_j+1].axis('off')
+                ax[i, use_j+1].set_xticks([])
+                ax[i, use_j+1].set_yticks([])
             if j == 0:
                 ax[i, j].set_ylabel(inv_sp[i])
+                # ax[i, j].text(x=0, y=64, s=inv_sp[i], c='white')
             if j >= tf.shape[0]:
                 continue
             imfile = os.path.join(data_dir, tf.file.values[j])
             ax[i, use_j].imshow(np.flipud(np.load(imfile)))
             sp_lab = tf.true.values[j] if lab_true else tf.pred.values[j]
-            ax[i, use_j].text(x=0, y=1, s=inv_sp[sp_lab], c='white', va='top')
+            ax[i, use_j].text(x=60, y=1, s=inv_sp[sp_lab], c='white', va='top')
             ax[i, use_j].text(x=0, y=125, s='SNR '+str(round(tf.snr.values[j])), c='white', fontsize=8)
             if sal:
                 ax[i,use_j+1].imshow(sal_data[j], cmap=plt.cm.hot)

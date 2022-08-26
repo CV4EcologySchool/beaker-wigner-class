@@ -11,7 +11,7 @@ import torch.nn as nn
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from torchvision.transforms import Compose, Resize, ToPILImage, ToTensor
+from torchvision.transforms import Compose, Resize, ToPILImage, ToTensor, Normalize
 from model import BeakerNet
 
 def init_seed(seed):
@@ -70,7 +70,10 @@ def get_saliency(df, cfg, model):
         image = np.load(os.path.join(cfg['data_dir'], v.file))
         # basic transforms for pred
         image = np.repeat(image[..., np.newaxis], 3, -1)
-        image = Compose([ToPILImage(), Resize([224, 224]), ToTensor()])(image)
+        image = Compose([ToPILImage(), 
+                         Resize([224, 224]), ToTensor(),
+                         Normalize(mean=cfg['norm_mean'],
+                                             std=cfg['norm_sd'])])(image)
         # 
         image.requires_grad_()
         # none is for extras
