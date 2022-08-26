@@ -35,7 +35,7 @@ def predict(cfg, model, label_csv):
                                  Resize([224, 224]), 
                                  ToTensor(),
                                  Normalize(mean=cfg['norm_mean'],
-                                                     std=cfg['norm_sd'])])
+                                                     std=cfg['norm_sd'])]))
     
     dataloader = DataLoader(
         dataset=dataset,
