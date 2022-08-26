@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import sklearn.metrics as met
 import matplotlib.pyplot as plt
+from util import get_saliency
 
 def predict(cfg, model, label_csv):
     
@@ -82,7 +83,7 @@ def predict(cfg, model, label_csv):
                    axis = 1)
     return(df)   
     
-def pred_plots(df, cfg, name):
+def pred_plots(df, cfg, name, model):
     outdir = cfg['pred_dir']
     # two confusion matrices
     cm_true = met.confusion_matrix(df.true, df.pred, normalize='true')
@@ -123,13 +124,13 @@ def pred_plots(df, cfg, name):
     top_tp, top_fp, top_fn = get_top_n(df, cfg['plot_top_n'])
     plot_top_n(top_tp, cfg,
                os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'TP_'+name+'.png'),
-               lab_true = True, title = 'Predicted vs True')
+               lab_true = True, title = 'Predicted vs True', sal=cfg['do_sal'], model=model)
     plot_top_n(top_fp, cfg,
                os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FP_'+name+'.png'),
-               lab_true = True, title = 'Predicted vs True')
+               lab_true = True, title = 'Predicted vs True', sal=cfg['do_sal'], model=model)
     plot_top_n(top_fn, cfg,
             os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FN_'+name+'.png'),
-               lab_true = False, title='True vs Predicted')
+               lab_true = False, title='True vs Predicted', sal=cfg['do_sal'], model=model)
 
 def event_metrics(df, cfg, name):
     ev = df.groupby('station').agg(
@@ -182,7 +183,7 @@ def get_top_n(df, n_top=5):
     
     return(top_tp, top_fp, top_fn)
 
-def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title=''):
+def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', sal=False, model=None):
     n_top = cfg['plot_top_n']
     if type(df) != list:
         df = get_top_n(df, n_top)
@@ -194,22 +195,29 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title=''):
     classes = range(cfg['num_classes'])
     fsize = 1.5
     # plt.figure(figsize=(fsize * len(classes), fsize * n_top))
-    fig, ax = plt.subplots(len(classes), n_top, figsize=(fsize*len(classes)+.5, fsize * n_top))
+    fig, ax = plt.subplots(len(classes), n_top*(1+sal), 
+                           figsize=(fsize*len(classes)+.5, fsize * n_top *(1+sal)))
     
     for i, tf in enumerate(df):
+        if sal:
+            sal_data = get_saliency(tf, cfg, model)
+            # fix all Js here
         for j in range(n_top):
-            ax[i, j].set_xticks([])
-            ax[i, j].set_yticks([])
+            use_j = j * (1+sal)
+            ax[i, use_j].axis('off')
+            if sal:
+                ax[i, use_j+1].axis('off')
             if j == 0:
                 ax[i, j].set_ylabel(inv_sp[i])
             if j >= tf.shape[0]:
                 continue
-
             imfile = os.path.join(data_dir, tf.file.values[j])
-            ax[i, j].imshow(np.flipud(np.load(imfile)))
+            ax[i, use_j].imshow(np.flipud(np.load(imfile)))
             sp_lab = tf.true.values[j] if lab_true else tf.pred.values[j]
-            ax[i, j].text(x=0, y=1, s=inv_sp[sp_lab], c='white', va='top')
-            ax[i, j].text(x=0, y=125, s='SNR '+str(round(tf.snr.values[j])), c='white', fontsize=8)
+            ax[i, use_j].text(x=0, y=1, s=inv_sp[sp_lab], c='white', va='top')
+            ax[i, use_j].text(x=0, y=125, s='SNR '+str(round(tf.snr.values[j])), c='white', fontsize=8)
+            if sal:
+                ax[i,use_j+1].imshow(sal_data[j], cmap=plt.cm.hot)
             # and then set label label for all to show misclass
             # ax[i, j].set_title(inv_sp[i])
     fig.tight_layout(pad=.01)
