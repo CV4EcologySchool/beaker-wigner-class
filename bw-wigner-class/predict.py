@@ -6,7 +6,7 @@ Created on Wed Aug 10 16:53:06 2022
 """
 from dataset import BWDataset
 from model import BeakerNet
-from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
+from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage, Normalize
 import os
 from torch.utils.data import DataLoader
 import torch
@@ -31,7 +31,11 @@ def predict(cfg, model, label_csv):
         model.load_state_dict(state['model'])
     
     dataset = BWDataset(cfg, label_csv, 
-                        Compose([ToPILImage(), Resize([224, 224]), ToTensor()]))
+                        Compose([ToPILImage(), 
+                                 Resize([224, 224]), 
+                                 ToTensor(),
+                                 Normalize(mean=cfg['norm_mean'],
+                                                     std=cfg['norm_sd'])])
     
     dataloader = DataLoader(
         dataset=dataset,
@@ -196,7 +200,7 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', sal=False, mo
     fsize = 1.5
     # plt.figure(figsize=(fsize * len(classes), fsize * n_top))
     fig, ax = plt.subplots(len(classes), n_top*(1+sal), 
-                           figsize=(fsize*len(classes)+.5, fsize * n_top *(1+sal)))
+                           figsize=(fsize*len(classes)*(1+sal)+.5, fsize * n_top))
     
     for i, tf in enumerate(df):
         if sal:
