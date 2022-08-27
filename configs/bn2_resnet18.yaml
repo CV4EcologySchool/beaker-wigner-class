@@ -57,5 +57,7 @@ snr_scale_params: {'max_val': 30,
                    'min_prob': 1}
 # set to like -10 to turn off
 snr_filt_min: -10
+# filter for high SNR vals
+snr_trunc: 80
 
 

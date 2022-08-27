@@ -28,7 +28,8 @@ class BWDataset(Dataset):
         # some files are NA bc I exported all w/o filtering, drop them now
         for drop in cfg['check_na_col']:
             df = df[-np.isnan(df[drop])]
-        df = df[df.snr > cfg['snr_filt_min']]    
+        df = df[df.snr > cfg['snr_filt_min']]   
+        df.snr[df.snr > cfg['snr_trunc']] = cfg['snr_trunc']
         self.file = [os.path.join(cfg['data_dir'], x) for x in list(df.file)]
         self.csvname = label_csv
         self.species = [cfg['sp_dict'][x] for x in df.species.tolist()]
@@ -39,8 +40,7 @@ class BWDataset(Dataset):
         self.wigMax /= max(self.wigMax)
         self.wigMax = self.wigMax[:, np.newaxis]
         snr_par = cfg['snr_scale_params']
-        self.snr_scale = df.snr.values / snr_par['max_val'] \
-            * (1-snr_par['min_prob']) + snr_par['min_prob']
+        self.snr_scale = df.snr.values / snr_par['max_val'] * (1-snr_par['min_prob']) + snr_par['min_prob']
         self.snr_scale[self.snr_scale > 1] = 1
     
     def __len__(self):
