@@ -4,10 +4,10 @@ data_dir: '/datadrive/bwfolder/data'
 # data_dir: './data'
 label_dir: '/datadrive/bwfolder/labels'
 # label_dir: 'labels'
-label_csv: {'train': 'PASCAL_BW_Train.csv',
-            'test': 'PASCAL_BW_Test.csv',
-            'val': 'PASCAL_BW_Val.csv',
-            'predict': 'PASCAL_BW_Train.csv'}
+label_csv: {'train': 'PASCAL_BW_F33_Train.csv',
+            'test': 'PASCAL_BW_F33_Test.csv',
+            'val': 'PASCAL_BW_F33_Val.csv',
+            'predict': 'PASCAL_BW_F33_Train.csv'}
 sp_dict: {'ZC': 0,
           'BB': 1,
           'MS': 2,
@@ -20,7 +20,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_states_snrfilt5_lrstep_norm.5.04'
+model_save_dir: 'model_statesf33_step_norm.5.04'
 
 # computer parameters
 seed: 11211988
@@ -38,7 +38,7 @@ num_epochs: 50
 # plot params
 plot_top_n: 5
 do_sal: True
-pred_dir: 'export_preds_snrfilt5_lrstep_norm.5.04'
+pred_dir: 'export_predsf33_step_norm.5.04'
 
 # augmentation params
 # set 0 to turn off
@@ -56,6 +56,6 @@ norm_sd: [.046, .046, .046]
 snr_scale_params: {'max_val': 30,
                    'min_prob': 1}
 # set to like -10 to turn off
-snr_filt_min: 5
+snr_filt_min: -10
 
 
