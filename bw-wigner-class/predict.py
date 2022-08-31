@@ -207,7 +207,7 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
     classes = range(cfg['num_classes'])
     fsize = 1.5
     # plt.figure(figsize=(fsize * len(classes), fsize * n_top))
-    fig, ax = plt.subplots(len(classes), n_top*(1+sal+2*dff), 
+    fig, ax = plt.subplots(len(classes), n_top*(1+sal+dff), 
                            figsize=(fsize*n_top*(1+sal+2*dff)+.25, fsize * len(classes)+.5))
     
     for i, tf in enumerate(df):
@@ -216,10 +216,10 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
             # fix all Js here
             
         for j in range(n_top):
-            use_j = j * (1+sal)
+            use_j = j * (1+sal+dff)
             ax[i, use_j].set_xticks([])
             ax[i, use_j].set_yticks([])
-            if sal:
+            if sal or dff:
                 ax[i, use_j+1].set_xticks([])
                 ax[i, use_j+1].set_yticks([])
             if j == 0:
