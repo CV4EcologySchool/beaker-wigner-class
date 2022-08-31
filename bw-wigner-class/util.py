@@ -13,6 +13,9 @@ import os
 import matplotlib.pyplot as plt
 from torchvision.transforms import Compose, Resize, ToPILImage, ToTensor, Normalize
 from model import BeakerNet
+from pytorch_grad_cam import DeepFeatureFactorization
+from pytorch_grad_cam.utils.image import show_factorization_on_image
+import cv2
 
 def init_seed(seed):
     if seed is not None:
@@ -90,3 +93,51 @@ def get_saliency(df, cfg, model):
         sal_out.append(np.flipud(saliency.numpy()))
 
     return(sal_out)
+
+def create_labels(concept_scores, top_k=2):
+    labels = ['ZC', 'BB', 'MS', 'BW43', 'BW37V']
+    concept_categories = np.argsort(concept_scores, axis=1)[:, ::-1][:, :top_k]
+    concept_labels_topk = []
+    for concept_index in range(concept_categories.shape[0]):
+        categories = concept_categories[concept_index, :]    
+        concept_labels = []
+        for category in categories:
+            score = concept_scores[concept_index, category]
+            label = f"{labels[category].split(',')[0]}:{score:.2f}"
+            concept_labels.append(label)
+        concept_labels_topk.append("\n".join(concept_labels))
+    return concept_labels_topk
+
+def get_img(file):
+    """A function that gets a URL of an image, 
+    and returns a numpy image and a preprocessed
+    torch tensor ready to pass to the model """
+    img = np.load(file)
+    img = np.repeat(img[..., np.newaxis], 3, -1)
+    input_tensor = Compose([ToPILImage(), Resize([224, 224]), ToTensor()])(img)
+    img = (input_tensor.permute(1,2,0).numpy()*255).astype(np.uint8)
+    rgb_img_float = input_tensor.permute(1,2,0).numpy()
+    return img, rgb_img_float, input_tensor
+
+def visualize_dff(model, file, n_components=5, top_k=2):
+    img, rgb_img_float, input_tensor = get_img(file)
+    classifier = model.classifier
+    dff = DeepFeatureFactorization(model=model, target_layer=model.feature_extractor.layer4, 
+                                   computation_on_concepts=classifier)
+    concepts, batch_explanations, concept_outputs = dff(input_tensor.unsqueeze(0), n_components)
+    
+    concept_outputs = torch.softmax(torch.from_numpy(concept_outputs), axis=-1).numpy()    
+    concept_label_strings = create_labels(concept_outputs, top_k=top_k)
+    visualization = show_factorization_on_image(rgb_img_float, 
+                                                batch_explanations[0],
+                                                image_weight=0.5,
+                                                concept_labels=concept_label_strings)
+    # result = np.hstack((img, visualization))
+    # print(img.shape)
+    # result = visualization
+    visualization[:, 0:img.shape[1], :] = np.flipud(visualization[:, 0:img.shape[1], :])
+    # Just for the jupyter notebook, so the large images won't weight a lot:
+    # if result.shape[0] > 500:
+    #     result = cv2.resize(result, (result.shape[1]//4, result.shape[0]//4))
+    
+    return visualization

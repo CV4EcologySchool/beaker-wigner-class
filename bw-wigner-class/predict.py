@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import sklearn.metrics as met
 import matplotlib.pyplot as plt
-from util import get_saliency
+from util import get_saliency, visualize_dff
 
 def predict(cfg, model, label_csv):
     
@@ -129,13 +129,13 @@ def pred_plots(df, cfg, name, model):
     top_tp, top_fp, top_fn = get_top_n(df, cfg['plot_top_n'])
     plot_top_n(top_tp, cfg,
                os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'TP_'+name+'.png'),
-               lab_true = True, title = 'Predicted vs True', sal=cfg['do_sal'], model=model)
+               lab_true = True, title = 'Predicted vs True', model=model)
     plot_top_n(top_fp, cfg,
                os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FP_'+name+'.png'),
-               lab_true = True, title = 'Predicted vs True', sal=cfg['do_sal'], model=model)
+               lab_true = True, title = 'Predicted vs True', model=model)
     plot_top_n(top_fn, cfg,
             os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FN_'+name+'.png'),
-               lab_true = False, title='True vs Predicted', sal=cfg['do_sal'], model=model)
+               lab_true = False, title='True vs Predicted', model=model)
 
 def event_metrics(df, cfg, name):
     ev = df.groupby('station').agg(
@@ -188,10 +188,12 @@ def get_top_n(df, n_top=5):
     
     return(top_tp, top_fp, top_fn)
 
-def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', sal=False, model=None):
+def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
     n_top = cfg['plot_top_n']
     if type(df) != list:
         df = get_top_n(df, n_top)
+    sal = cfg['do_sal']
+    dff = cfg['do_dff']
     
     inv_sp = {cfg['sp_dict'][x]: x for x in cfg['sp_dict']}
     data_dir = cfg['data_dir']
@@ -200,13 +202,14 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', sal=False, mo
     classes = range(cfg['num_classes'])
     fsize = 1.5
     # plt.figure(figsize=(fsize * len(classes), fsize * n_top))
-    fig, ax = plt.subplots(len(classes), n_top*(1+sal), 
-                           figsize=(fsize*n_top*(1+sal)+.25, fsize * len(classes)+.5))
+    fig, ax = plt.subplots(len(classes), n_top*(1+sal+2*dff), 
+                           figsize=(fsize*n_top*(1+sal+2*dff)+.25, fsize * len(classes)+.5))
     
     for i, tf in enumerate(df):
         if sal:
             sal_data = get_saliency(tf, cfg, model)
             # fix all Js here
+            
         for j in range(n_top):
             use_j = j * (1+sal)
             ax[i, use_j].set_xticks([])
@@ -226,6 +229,8 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', sal=False, mo
             ax[i, use_j].text(x=0, y=125, s='SNR '+str(round(tf.snr.values[j])), c='white', fontsize=8)
             if sal:
                 ax[i,use_j+1].imshow(sal_data[j], cmap=plt.cm.hot)
+            if dff:
+                ax[i,use_j+1].imshow(visualize_dff(model, imfile, cfg['n_dff']))
             # and then set label label for all to show misclass
             # ax[i, j].set_title(inv_sp[i])
     fig.tight_layout(pad=.01)
@@ -238,7 +243,9 @@ def do_pred_work(cfg, args, split='train', pred_df=None):
     suff = '_' + args.name + 'pred.csv'
     outdir = cfg['pred_dir']
     os.makedirs(outdir, exist_ok=True)
-    
+    if cfg['do_sal'] and cfg['do_dff']:
+        cfg['do_sal'] = False
+        
     if pred_df is None:
         label_csv = os.path.join(cfg['label_dir'], cfg['label_csv'][split])
         pred_df = predict(cfg, args.model, label_csv)
@@ -248,6 +255,7 @@ def do_pred_work(cfg, args, split='train', pred_df=None):
     else:
         pred_df = pd.read_csv(pred_df)
         cfg['do_sal'] = False
+        cfg['do_dff'] = False
         
     pred_plots(pred_df, cfg, args.name+'_'+split, args.model)
     event_metrics(pred_df, cfg, args.name+'_'+split)

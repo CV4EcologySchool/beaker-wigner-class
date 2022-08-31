@@ -38,8 +38,10 @@ num_epochs: 50
 
 # plot params
 plot_top_n: 5
-do_sal: True
+do_sal: False
 pred_dir: 'pred_comb_norm_snr10'
+do_dff: True
+n_dff: 3
 
 # augmentation params
 # set 0 to turn off

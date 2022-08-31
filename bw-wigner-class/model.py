@@ -42,7 +42,7 @@ class BeakerNet(nn.Module):
         self.classifier = nn.Linear(in_features, cfg['num_classes'])           # ...and create a new one
     
 
-    def forward(self, x, extras):
+    def forward(self, x, extras=None):
         '''
             Forward pass. Here, we define how to apply our model. It's basically
             applying our modified ResNet-18 on the input tensor ("x") and then
