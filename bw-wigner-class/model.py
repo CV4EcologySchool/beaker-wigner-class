@@ -35,7 +35,7 @@ class BeakerNet(nn.Module):
         # ImageNet to a new one that outputs num_classes
         last_layer = self.feature_extractor.fc                          # tip: print(self.feature_extractor) to get info on how model is set up
         # Adding 1 here for extra features
-        in_features = last_layer.in_features + cfg['extra_params']                     # number of input dimensions to last (classifier) layer
+        in_features = last_layer.in_features + cfg['extra_params'] + cfg['use_ici']      # number of input dimensions to last (classifier) layer
         
         self.feature_extractor.fc = nn.Identity()                       # discard last layer...
 

@@ -4,10 +4,11 @@ data_dir: '/datadrive/bwfolder/data'
 # data_dir: './data'
 label_dir: '/datadrive/bwfolder/labels'
 # label_dir: 'labels'
-label_csv: {'train': 'CCES_BW_Train.csv',
-            'test': 'CCES_BW_Test.csv',
-            'val': 'CCES_BW_Val.csv',
-            'predict': 'CCES_BW_Train.csv'}
+label_csv: {'train': 'Combined_BW_Train.csv',
+            'test': 'Combined_BW_Test.csv',
+            'val': 'Combined_BW_Val.csv',
+            'predict': 'Combined_BW_Train.csv'}
+use_survey: ['pascal', 'cces']
 sp_dict: {'ZC': 0,
           'BB': 1,
           'MS': 2,
@@ -56,8 +57,10 @@ norm_sd: [.046, .046, .046]
 snr_scale_params: {'max_val': 30,
                    'min_prob': 1}
 # set to like -10 to turn off
-snr_filt_min: 5
+snr_filt_min: -10
 # filter for high SNR vals
 snr_trunc: 80
+ici_max: 1
+use_ici: False
 
 

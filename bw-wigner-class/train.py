@@ -169,13 +169,14 @@ def train(cfg, dataloader, model, optimizer):
     all_pred = np.empty(0)
     all_true = np.empty(0)
     pb = trange(len(dataloader))
+    has_extras = cfg['use_ici'] + cfg['extra_params']
     
     for idx, (data, label, snr, extras) in enumerate(dataloader):
         # put on device for model speed
         all_true = np.append(all_true, label.cpu().detach().numpy())
         data, label, snr = data.to(device), label.to(device), snr.to(device)
         # forward, beakernet!
-        if cfg['extra_params']:
+        if has_extras:
             extras = extras.to(device)
         else:
             extras = None
@@ -235,12 +236,13 @@ def validate(cfg, dataloader, model):
     all_pred = np.empty(0)
     all_true = np.empty(0)
     pb = trange(len(dataloader))
+    has_extras = cfg['use_ici'] + cfg['extra_params']
     # this is so we dont calc gradient bc not needed for val
     with torch.no_grad():
         for idx, (data, label, snr, extras) in enumerate(dataloader):
             all_true = np.append(all_true, label.cpu().numpy())
             data, label, snr = data.to(device), label.to(device), snr.to(device)
-            if cfg['extra_params']:
+            if has_extras:
                 extras = extras.to(device)
             else:
                 extras = None

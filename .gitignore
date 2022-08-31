@@ -4,3 +4,10 @@ azcopy.exe
 .spyproject
 .ipynb_checkpoints
 venv
+model_states*
+export_*
+data/
+PASCAL_*csv
+SNR_*csv
+WL128SNR/
+WigNP_WL128_Int8/

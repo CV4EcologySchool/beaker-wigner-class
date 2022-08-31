@@ -25,11 +25,14 @@ class BWDataset(Dataset):
         as a param in the data loade
         '''
         df = pd.read_csv(label_csv)
+        # first filt to survey we want
+        df = df[df['survey'].isin(cfg['use_survey'])]
         # some files are NA bc I exported all w/o filtering, drop them now
         for drop in cfg['check_na_col']:
             df = df[-np.isnan(df[drop])]
         df = df[df.snr > cfg['snr_filt_min']]   
-        df.snr[df.snr > cfg['snr_trunc']] = cfg['snr_trunc']
+        df.loc[df['snr'] > cfg['snr_trunc'], 'snr'] = cfg['snr_trunc']
+        df.loc[df['ici'] > cfg['ici_max'], 'ici'] = cfg['ici_max']
         self.file = [os.path.join(cfg['data_dir'], x) for x in list(df.file)]
         self.csvname = label_csv
         self.species = [cfg['sp_dict'][x] for x in df.species.tolist()]
@@ -39,6 +42,9 @@ class BWDataset(Dataset):
         self.wigMax -= min(self.wigMax)
         self.wigMax /= max(self.wigMax)
         self.wigMax = self.wigMax[:, np.newaxis]
+        self.event = df.station.tolist()
+        self.ici = df.ici.values[:, np.newaxis]
+        self.survey = df.survey.tolist()
         snr_par = cfg['snr_scale_params']
         self.snr_scale = df.snr.values / snr_par['max_val'] * (1-snr_par['min_prob']) + snr_par['min_prob']
         self.snr_scale[self.snr_scale > 1] = 1
@@ -53,7 +59,7 @@ class BWDataset(Dataset):
         image = np.repeat(image[..., np.newaxis], 3, -1)
         # print(image.shape)
         label = self.species[ix]
-        extras = torch.tensor(self.wigMax[ix])
+        extras = torch.tensor(self.ici[ix])
         # extras = torch.hstack([extras, extras])
         # make tensor
         if(self.transform):

@@ -52,11 +52,12 @@ def predict(cfg, model, label_csv):
     model.to(device)
     model.eval()
     pb = trange(len(dataloader))
+    has_extras = cfg['use_ici'] + cfg['extra_params']
     with torch.no_grad():
         for idx, (data, label, snr, extras) in enumerate(dataloader):
             # put on device for model speed
             data, label = data.to(device), label.to(device)
-            if cfg['extra_params']:
+            if has_extras:
                 extras = extras.to(device)
             else:
                 extras = None
