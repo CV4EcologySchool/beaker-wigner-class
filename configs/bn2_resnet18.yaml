@@ -21,7 +21,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_CCES_norm.5.04_snrfilt5'
+model_save_dir: 'model_comb_norm'
 
 # computer parameters
 seed: 11211988
@@ -39,7 +39,7 @@ num_epochs: 50
 # plot params
 plot_top_n: 5
 do_sal: True
-pred_dir: 'pascalon_cces_norm.5.04_snrfilt5'
+pred_dir: 'pred_comb_norm'
 
 # augmentation params
 # set 0 to turn off
