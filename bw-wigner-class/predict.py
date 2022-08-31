@@ -195,6 +195,11 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
     sal = cfg['do_sal']
     dff = cfg['do_dff']
     
+    if (sal or dff) and isinstance(model, str):
+        state = torch.load(open(model, 'rb'), map_location='cpu')
+        model = BeakerNet(cfg)
+        model.load_state_dict(state['model'])
+        
     inv_sp = {cfg['sp_dict'][x]: x for x in cfg['sp_dict']}
     data_dir = cfg['data_dir']
             
