@@ -284,8 +284,8 @@ def do_pred_work(cfg, args, split='train', pred_df=None):
     suff = '_' + args.name + 'pred.csv'
     outdir = cfg['pred_dir']
     os.makedirs(outdir, exist_ok=True)
-    if cfg['do_sal'] and cfg['do_dff']:
-        cfg['do_sal'] = False
+    # if cfg['do_sal'] and cfg['do_dff']:
+    #     cfg['do_sal'] = False
         
     if pred_df is None:
         label_csv = os.path.join(cfg['label_dir'], cfg['label_csv'][split])
