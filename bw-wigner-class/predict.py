@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import sklearn.metrics as met
 import matplotlib.pyplot as plt
-from util import get_saliency, visualize_dff
+from util import get_saliency, do_dff, do_gradcam
 
 def predict(cfg, model, label_csv):
     
@@ -126,17 +126,44 @@ def pred_plots(df, cfg, name, model):
     plt.savefig(os.path.join(outdir, 'PRCurve_'+name+'.png'))
     
     # best and worst images
-    top_tp, top_fp, top_fn = get_top_n(df, cfg['plot_top_n'])
-    plot_top_n(top_tp, cfg,
-               os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'TP_'+name+'.png'),
-               lab_true = True, title = 'Predicted vs True', model=model)
-    plot_top_n(top_fp, cfg,
-               os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FP_'+name+'.png'),
-               lab_true = True, title = 'Predicted vs True', model=model)
-    plot_top_n(top_fn, cfg,
-            os.path.join(outdir, 'Top'+str(cfg['plot_top_n'])+'FN_'+name+'.png'),
-               lab_true = False, title='True vs Predicted', model=model)
+    top_list = get_top_n(df, cfg['plot_top_n'])
+    do_sal = cfg['do_sal']
+    do_dff = cfg['do_dff']
+    do_gradcam = cfg['do_gradcam']
+    
+    if do_dff + do_gradcam:
+        do_plot_top_n(top_list, cfg, name+'Lay0', model, layer=0)
+        do_plot_top_n(top_list, cfg, name+'Lay-1', model, layer=-1)
+    # if do_sal:
+    #     cfg['do_sal'] = True
+    #     cfg['do_dff'] = False
+    #     cfg['do_gradcam'] = False
+    #     do_plot_top_n(top_list, cfg, name+'Sal', model)
+        
+    # if do_dff:
+    #     cfg['do_sal'] = False
+    #     cfg['do_dff'] = True
+    #     cfg['do_gradcam'] = False
+    #     do_plot_top_n(top_list, cfg, name+'DFF', model, layer=0)
+    
+    # if do_gradcam:
+    #     cfg['do_sal'] = False
+    #     cfg['do_dff'] = False
+    #     cfg['do_gradcam'] = True
+    #     do_plot_top_n(top_list, cfg, name+'GradCAM', model, layer=0)
 
+def do_plot_top_n(top_list, cfg, name, model, layer):
+    top_pre = ['TP_', 'FP_', 'FN_']
+    outdir = cfg['pred_dir']
+    for i in range(3):
+        plot_top_n(top_list[i], 
+                   cfg,
+                   os.path.join(outdir,'Top'+str(cfg['plot_top_n'])+top_pre[i]+name+'.png'), 
+                   lab_true = i < 2,
+                   title = 'Predicted vs True' if i < 2 else 'True vs Predicted',
+                   model=model,
+                   layer=layer)
+        
 def event_metrics(df, cfg, name):
     ev = df.groupby('station').agg(
         sump0 = ('p0', 'sum'),
@@ -188,12 +215,13 @@ def get_top_n(df, n_top=5):
     
     return(top_tp, top_fp, top_fn)
 
-def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
+def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None, layer=-1):
     n_top = cfg['plot_top_n']
     if type(df) != list:
         df = get_top_n(df, n_top)
     sal = cfg['do_sal']
     dff = cfg['do_dff']
+    gradcam = cfg['do_gradcam']
     
     if (sal or dff) and isinstance(model, str):
         state = torch.load(open(model, 'rb'), map_location='cpu')
@@ -207,8 +235,8 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
     classes = range(cfg['num_classes'])
     fsize = 1.5
     # plt.figure(figsize=(fsize * len(classes), fsize * n_top))
-    fig, ax = plt.subplots(len(classes), n_top*(1+sal+dff), 
-                           figsize=(fsize*n_top*(1+sal+2*dff)+.25, fsize * len(classes)+.5))
+    fig, ax = plt.subplots(len(classes), n_top*(1+sal+dff+gradcam), 
+                           figsize=(fsize*n_top*(1+sal+2*dff+gradcam)+.25, fsize * len(classes)+.5))
     
     for i, tf in enumerate(df):
         if sal:
@@ -216,12 +244,18 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
             # fix all Js here
             
         for j in range(n_top):
-            use_j = j * (1+sal+dff)
+            use_j = j * (1+sal+dff+gradcam)
             ax[i, use_j].set_xticks([])
             ax[i, use_j].set_yticks([])
-            if sal or dff:
-                ax[i, use_j+1].set_xticks([])
-                ax[i, use_j+1].set_yticks([])
+            if sal:
+                ax[i, use_j+sal].set_xticks([])
+                ax[i, use_j+sal].set_yticks([])
+            if dff:
+                ax[i, use_j+sal+dff].set_xticks([])
+                ax[i, use_j+sal+dff].set_yticks([])
+            if gradcam:
+                ax[i, use_j+sal+dff+gradcam].set_xticks([])
+                ax[i, use_j+sal+dff+gradcam].set_yticks([])
             if j == 0:
                 ax[i, j].set_ylabel(inv_sp[i])
                 # ax[i, j].text(x=0, y=64, s=inv_sp[i], c='white')
@@ -233,9 +267,11 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
             ax[i, use_j].text(x=60, y=1, s=inv_sp[sp_lab], c='white', va='top')
             ax[i, use_j].text(x=0, y=125, s='SNR '+str(round(tf.snr.values[j])), c='white', fontsize=8)
             if sal:
-                ax[i,use_j+1].imshow(sal_data[j], cmap=plt.cm.hot)
+                ax[i,use_j+sal].imshow(sal_data[j], cmap=plt.cm.hot)
             if dff:
-                ax[i,use_j+1].imshow(visualize_dff(model, imfile, cfg=cfg))
+                ax[i,use_j+sal+dff].imshow(do_dff(model, imfile, cfg=cfg, layer=layer))
+            if gradcam:
+                ax[i, use_j+sal+dff+gradcam].imshow(do_gradcam(model, imfile, cfg=cfg, layer=layer))
             # and then set label label for all to show misclass
             # ax[i, j].set_title(inv_sp[i])
     fig.tight_layout(pad=.01)

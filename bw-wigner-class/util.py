@@ -13,8 +13,9 @@ import os
 import matplotlib.pyplot as plt
 from torchvision.transforms import Compose, Resize, ToPILImage, ToTensor, Normalize
 from model import BeakerNet
-from pytorch_grad_cam import DeepFeatureFactorization
-from pytorch_grad_cam.utils.image import show_factorization_on_image
+from pytorch_grad_cam import DeepFeatureFactorization, GradCAM
+from pytorch_grad_cam.utils.image import show_factorization_on_image, show_cam_on_image
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 import cv2
 
 def init_seed(seed):
@@ -123,11 +124,12 @@ def get_img(file, cfg):
                         std=cfg['norm_sd'])(input_tensor)
     return img, rgb_img_float, input_tensor
 
-def visualize_dff(model, file, cfg, top_k=2):
+def do_dff(model, file, cfg, layer=-1, top_k=2):
     img, rgb_img_float, input_tensor = get_img(file, cfg)
     classifier = model.classifier
     n_components = cfg['n_dff']
-    dff = DeepFeatureFactorization(model=model, target_layer=model.feature_extractor.layer4, 
+    dff = DeepFeatureFactorization(model=model,
+                                   target_layer=model.feature_extractor.layer4[layer], 
                                    computation_on_concepts=classifier)
     concepts, batch_explanations, concept_outputs = dff(input_tensor.unsqueeze(0), n_components)
     
@@ -146,3 +148,30 @@ def visualize_dff(model, file, cfg, top_k=2):
     #     result = cv2.resize(result, (result.shape[1]//4, result.shape[0]//4))
     
     return visualization
+
+def do_gradcam(model, file, layer, cfg, norm=True, targets=None):
+    if isinstance(model, str):
+        state = torch.load(open(model, 'rb'), map_location='cpu')
+        model = BeakerNet(cfg)
+        model.load_state_dict(state['model'])
+        cam = GradCAM(model=model, 
+                      target_layers = [model.feature_extractor.layer4[x] for x in layer])
+    image = np.load(file)
+    image = np.repeat(image[..., np.newaxis], 3, -1)
+    image = Compose([ToPILImage(), 
+                     Resize([224, 224]), 
+                     ToTensor()])(image)
+    if norm:
+        image = Normalize(mean=cfg['norm_mean'], std=cfg['norm_sd'])(image)
+    # targets = None
+    if targets is not None:
+        targets = [ClassifierOutputTarget(x) for x in targets]
+    cam_im = cam(image.unsqueeze(0), aug_smooth=True, eigen_smooth=True,targets=targets)
+    
+    if norm:
+        image = Compose([Normalize(mean=[0,0,0], 
+                                   std=[1/x for x in cfg['norm_sd']]),
+                         Normalize(mean=[-x for x in cfg['norm_mean']], 
+                                   std=[1,1,1])])(image)
+    return np.flipud(show_cam_on_image(image.permute(1,2,0).numpy(),
+                      cam_im.squeeze(0), use_rgb=True))
