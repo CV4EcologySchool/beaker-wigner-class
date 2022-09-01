@@ -108,20 +108,25 @@ def create_labels(concept_scores, top_k=2):
         concept_labels_topk.append("\n".join(concept_labels))
     return concept_labels_topk
 
-def get_img(file):
+def get_img(file, cfg):
     """A function that gets a URL of an image, 
     and returns a numpy image and a preprocessed
     torch tensor ready to pass to the model """
     img = np.load(file)
     img = np.repeat(img[..., np.newaxis], 3, -1)
-    input_tensor = Compose([ToPILImage(), Resize([224, 224]), ToTensor()])(img)
+    input_tensor = Compose([ToPILImage(), 
+                     Resize([224, 224]), ToTensor()])(img)
     img = (input_tensor.permute(1,2,0).numpy()*255).astype(np.uint8)
-    rgb_img_float = input_tensor.permute(1,2,0).numpy()
+    
+    rgb_img_float = np.float32(img)/255
+    input_tensor = Normalize(mean=cfg['norm_mean'],
+                        std=cfg['norm_sd'])(input_tensor)
     return img, rgb_img_float, input_tensor
 
-def visualize_dff(model, file, n_components=5, top_k=2):
-    img, rgb_img_float, input_tensor = get_img(file)
+def visualize_dff(model, file, cfg, top_k=2):
+    img, rgb_img_float, input_tensor = get_img(file, cfg)
     classifier = model.classifier
+    n_components = cfg['n_dff']
     dff = DeepFeatureFactorization(model=model, target_layer=model.feature_extractor.layer4, 
                                    computation_on_concepts=classifier)
     concepts, batch_explanations, concept_outputs = dff(input_tensor.unsqueeze(0), n_components)

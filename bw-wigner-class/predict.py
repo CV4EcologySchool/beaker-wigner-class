@@ -235,7 +235,7 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None):
             if sal:
                 ax[i,use_j+1].imshow(sal_data[j], cmap=plt.cm.hot)
             if dff:
-                ax[i,use_j+1].imshow(visualize_dff(model, imfile, cfg['n_dff']))
+                ax[i,use_j+1].imshow(visualize_dff(model, imfile, cfg=cfg))
             # and then set label label for all to show misclass
             # ax[i, j].set_title(inv_sp[i])
     fig.tight_layout(pad=.01)
