@@ -239,8 +239,9 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None, l
     wids = wids[[True, sal, dff, gradcam]]
     wids = np.tile(wids, n_top)
     fig, ax = plt.subplots(len(classes), n_top*(1+sal+dff+gradcam), 
-                           # figsize=(fsize*n_top*(1+sal+2*dff+gradcam)+.25, fsize * len(classes)+.5))
-                           gridspec_kw = {'width_ratios': wids})
+                            figsize=(fsize*n_top*(1+sal+2*dff+gradcam), fsize * len(classes)),
+                           gridspec_kw = {'width_ratios': wids,
+                                          'height_ratios': np.ones(len(classes))})
     
     for i, tf in enumerate(df):
         if sal:
@@ -281,7 +282,7 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None, l
     fig.tight_layout(pad=.01)
     if len(title):    
         fig.suptitle(title)
-        fig.subplots_adjust(top=.9)
+        fig.subplots_adjust(top=.95)
     fig.savefig(name)
     
 def do_pred_work(cfg, args, split='train', pred_df=None):
