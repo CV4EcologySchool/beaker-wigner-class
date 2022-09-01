@@ -154,8 +154,8 @@ def do_gradcam(model, file, layer, cfg, norm=True, targets=None):
         state = torch.load(open(model, 'rb'), map_location='cpu')
         model = BeakerNet(cfg)
         model.load_state_dict(state['model'])
-        cam = GradCAM(model=model, 
-                      target_layers = [model.feature_extractor.layer4[x] for x in layer])
+    cam = GradCAM(model=model, 
+                  target_layers = [model.feature_extractor.layer4[x] for x in layer])
     image = np.load(file)
     image = np.repeat(image[..., np.newaxis], 3, -1)
     image = Compose([ToPILImage(), 
