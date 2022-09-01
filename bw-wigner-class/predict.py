@@ -235,8 +235,11 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None, l
     classes = range(cfg['num_classes'])
     fsize = 1.5
     # plt.figure(figsize=(fsize * len(classes), fsize * n_top))
+    wids = np.array([1, 1, 2, 1])
+    wids = wids[[True, sal, dff, gradcam]]
     fig, ax = plt.subplots(len(classes), n_top*(1+sal+dff+gradcam), 
-                           figsize=(fsize*n_top*(1+sal+2*dff+gradcam)+.25, fsize * len(classes)+.5))
+                           # figsize=(fsize*n_top*(1+sal+2*dff+gradcam)+.25, fsize * len(classes)+.5))
+                           gridspec_kw = {'width_ratios': wids})
     
     for i, tf in enumerate(df):
         if sal:

@@ -41,7 +41,7 @@ plot_top_n: 5
 do_sal: True
 pred_dir: 'pred_comb_norm_snr10'
 do_dff: True
-n_dff: 3
+n_dff: 4
 do_gradcam: True
 
 # augmentation params
