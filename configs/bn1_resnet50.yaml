@@ -1,3 +1,4 @@
+#resnet 50
 # dataset params
 data_dir: '/datadrive/bwfolder/data'
 label_dir: '/datadrive/bwfolder/labels'
@@ -27,6 +28,8 @@ num_workers: 4
 # training hyperparams
 learning_rate: 0.001
 weight_decay: 0.001
+lr_step_count: 8
+lr_step: 1
 batch_size: 128
 num_epochs: 200
 

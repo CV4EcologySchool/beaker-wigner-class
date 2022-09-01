@@ -27,6 +27,7 @@ class BWDataset(Dataset):
         df = pd.read_csv(label_csv)
         # first filt to survey we want
         df = df[df['survey'].isin(cfg['use_survey'])]
+        df = df[df['species'].isin(cfg['sp_dict'])]
         # some files are NA bc I exported all w/o filtering, drop them now
         for drop in cfg['check_na_col']:
             df = df[-np.isnan(df[drop])]

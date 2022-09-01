@@ -4,7 +4,15 @@ label_dir: '.'
 label_csv: {'train': 'PASCAL_BW_Train.csv',
             'test': 'PASCAL_BW_Test.csv',
             'val': 'PASCAL_BW_Val.csv'}
+sp_dict: {'ZC': 0,
+          'BB': 1,
+          'MS': 2,
+          'BW43': 3,
+          'BW37V': 4}
+# keeping num_classes as a separate arg in case we want to expand
+# the sp_dict and only use a subset
 num_classes: 5
+model_save_dir: 'model_states'
 
 # computer parameters
 device: cuda
