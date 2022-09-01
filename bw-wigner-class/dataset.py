@@ -34,7 +34,8 @@ class BWDataset(Dataset):
         df = df[df.snr > cfg['snr_filt_min']]   
         df.loc[df['snr'] > cfg['snr_trunc'], 'snr'] = cfg['snr_trunc']
         df.loc[df['ici'] > cfg['ici_max'], 'ici'] = cfg['ici_max']
-        self.file = [os.path.join(cfg['data_dir'], x) for x in list(df.file)]
+        
+        self.file = [os.path.join(cfg['data_dir'], x) for x in df.file.tolist()]
         self.csvname = label_csv
         self.species = [cfg['sp_dict'][x] for x in df.species.tolist()]
         self.sp_dict = cfg['sp_dict']

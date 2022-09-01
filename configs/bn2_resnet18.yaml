@@ -21,7 +21,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_comb_norm_snr10'
+model_save_dir: 'model_comb_norm_snr5_ra30'
 
 # computer parameters
 seed: 11211988
@@ -37,17 +37,17 @@ batch_size: 256
 num_epochs: 50
 
 # plot params
-plot_top_n: 2
-do_sal: True
-pred_dir: 'pred_comb_norm_snr10'
+plot_top_n: 5
+do_sal: False
+pred_dir: 'pred_comb_norm_snr5_ra30'
 do_dff: True
 n_dff: 4
 do_gradcam: True
 
 # augmentation params
 # set 0 to turn off
-rndaff_transx: 0
-rndaff_fill: 0
+rndaff_transx: 0.3
+rndaff_fill: 127
 # set 1 to turn off 7 standard
 gb_kernel: 1
 gb_max: 2
@@ -60,7 +60,7 @@ norm_sd: [.046, .046, .046]
 snr_scale_params: {'max_val': 30,
                    'min_prob': 1}
 # set to like -10 to turn off
-snr_filt_min: 10
+snr_filt_min: 5
 # filter for high SNR vals
 snr_trunc: 80
 ici_max: 1
