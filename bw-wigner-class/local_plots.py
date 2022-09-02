@@ -20,7 +20,7 @@ def plot_all_event(df, cfg, ncol=5, by='snr', name='', outdir='.', sal=False):
     df = df.sort_values(by=by, ascending=False)
     df_list = [df.iloc[range(x, min(x+ncol, len(df)))] for x in range(0, len(df), ncol)]
         
-    nrow = len(df_list)
+    nrow = len(df) // ncol + (len(df) % ncol > 0)
     
     inv_sp = {cfg['sp_dict'][x]: x for x in cfg['sp_dict']}
     # data_dir = cfg['data_dir']
