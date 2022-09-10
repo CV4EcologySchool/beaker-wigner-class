@@ -4,24 +4,24 @@ data_dir: '/datadrive/bwfolder/data'
 # data_dir: './data'
 label_dir: '/datadrive/bwfolder/labels'
 # label_dir: 'labels'
-label_csv: {'train': 'Combined_BW10k_Val.csv',
-            'test': 'Combined_BW10k_Test.csv',
-            'val': 'Combined_BW10k_Train.csv',
+label_csv: {'train': 'PASCAL_BW10k_Val.csv',
+            'test': 'PASCAL_BW10k_Test.csv',
+            'val': 'PASCAL_BW10k_Train.csv',
             'predict': 'PASCAL_BW10k_Train.csv'}
 use_survey: ['pascal', 'cces']
 sp_dict: {'ZC': 0,
-          'BB': 1}
-          # 'MS': 2,
-          # 'BW43': 3,
-          # 'BW37V': 4}
+          'BB': 1,
+           'MS': 2,
+           'BW43': 3,
+           'BW37V': 4}
 pred_test: True
 check_na_col: ['wigMax', 'dBPP']
 resume: True
 extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
-num_classes: 2
-model_save_dir: 'model_ZCBBswapcomb10k_snr5norm'
+num_classes: 5
+model_save_dir: 'model_pas10k_snr5normici10'
 
 # computer parameters
 seed: 11211988
@@ -39,7 +39,7 @@ num_epochs: 90
 # plot params
 plot_top_n: 5
 do_sal: False
-pred_dir: 'pred_pascal10k_snr5norm_onall'
+pred_dir: 'pred_pascal10k_snr5norm_ici10'
 do_dff: True
 n_dff: 4
 do_gradcam: True
@@ -64,5 +64,5 @@ snr_filt_min: 5
 # filter for high SNR vals
 snr_trunc: 80
 ici_max: 1
-use_ici: False
+use_ici: True
 

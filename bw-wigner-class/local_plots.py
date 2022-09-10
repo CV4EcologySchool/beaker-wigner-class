@@ -13,51 +13,68 @@ from torchvision.transforms import Compose, Resize, ToTensor, ToPILImage
 from tqdm import trange
 import torch
 from model import BeakerNet
-
-def plot_all_event(df, cfg, ncol=5, by='snr', name='', outdir='.', sal=False):
+import numbers
+#%%
+def plot_all_pred(df, cfg, ncol=5, sort='', asc=False, name='',
+                  data_dir=None, out_dir='.', sal=False, nmax=100):
     
     # df = df[df.true == sp]
-    df = df.sort_values(by=by, ascending=False)
-    df_list = [df.iloc[range(x, min(x+ncol, len(df)))] for x in range(0, len(df), ncol)]
-        
+    if sort:
+        df = df.sort_values(by=sort, ascending=asc)
+    # df_list = [df.iloc[range(x, min(x+ncol, len(df)))] for x in range(0, len(df), ncol)]
+    if len(df) > nmax:
+        df = df[:nmax]
+    
     nrow = len(df) // ncol + (len(df) % ncol > 0)
     
     inv_sp = {cfg['sp_dict'][x]: x for x in cfg['sp_dict']}
-    # data_dir = cfg['data_dir']
-    data_dir = './data'
+    if data_dir is None:
+        data_dir = cfg['data_dir']
+    # data_dir = './data'
             
     fsize = 1.5
     
     fig, ax = plt.subplots(nrow, ncol*(1+sal), figsize=(fsize*ncol*(1+sal), fsize * nrow), squeeze=False)
-    
-    for i, tf in enumerate(df_list):
+
+    # for i, tf in enumerate(df_list):
+    for i in range(nrow):
         # print('i'+str(i))
         for j in range(ncol):
             # print('j'+str(j))
+            ix = i*ncol + j
             ax[i, j].set_xticks([])
             ax[i, j].set_yticks([])
-            if j == 0:
-                ax[i, j].set_ylabel(inv_sp[tf.true.values[j]])
-            if j >= tf.shape[0]:
+            if ix >= len(df):
                 ax[i, j].axis('off')
                 continue
+            if j == 0:
+                ax[i, j].set_ylabel(inv_sp[df.true.values[ix]])
 
-            imfile = os.path.join(data_dir, tf.file.values[j])
+            imfile = os.path.join(data_dir, df.file.values[ix])
             ax[i, j].imshow(np.flipud(np.load(imfile)))
-            sp_lab = tf.pred.values[j]
-            sp_col = 'white' if tf.pred.values[j] == tf.true.values[j] else 'red'
-            ax[i, j].text(x=0, y=1, s=inv_sp[sp_lab], c=sp_col, va='top')
-            ax[i, j].text(x=0, y=125, s='SNR '+str(round(tf.snr.values[j])), c='white', fontsize=8)
+            sp_lab = df.pred.values[ix]
+            sp_col = 'white' if df.pred.values[ix] == df.true.values[ix] else 'red'
+            # lab = inv_sp[sp_lab]+df.file.str.replace('.*C([12]).npy$', '\\1').values[ix]
+            lab = inv_sp[sp_lab]+str(round(df.snr.values[ix]))
+            ax[i, j].text(x=0, y=1, s=lab, c=sp_col, va='top')
+            if sort:
+                by_lab = df[sort].values[ix]
+                if isinstance(by_lab, numbers.Number):
+                    # round based on scale of input, 2 if <1 1 if <10
+                    rnd = 0 + (abs(by_lab) < 1) + (abs(by_lab) < 10)
+                    by_lab = round(by_lab, rnd)
+                    ax[i, j].text(x=0, y=125, s=sort+' '+str(by_lab), c='white', fontsize=8)
             # and then set label label for all to show misclass
             # ax[i, j].set_title(inv_sp[i])
     fig.tight_layout(pad=.01)
     if len(name):    
         fig.suptitle(name)
         fig.subplots_adjust(top=.9)
-    fig.savefig(os.path.join(outdir, name + '_by-' + by + '.png'))
+    fig.savefig(os.path.join(out_dir, name + '_by-' + sort + '.png'))
     # fig.show()
     plt.close(fig)
-
+    
+#%%
 def get_saliency(df, cfg, model):
     if isinstance(model, str):
         state = torch.load(open(model, 'rb'), map_location='cpu')

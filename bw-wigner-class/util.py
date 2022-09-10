@@ -17,7 +17,21 @@ from pytorch_grad_cam import DeepFeatureFactorization, GradCAM
 from pytorch_grad_cam.utils.image import show_factorization_on_image, show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 import cv2
-
+import re
+import pandas as pd
+#%%
+def parse_file_name(x, what='UID'):
+    if what == 'UID':
+        patt = '.*_OE[0-9]{1,5}_([0-9]{6,16})_C[12].npy'
+    elif what == 'channel':
+        patt = '.*_C([12]).npy'
+        
+    if type(x) == 'str':
+        x = os.path.basename(x)
+        return re.sub(patt, '\\1', x)
+    return x.file.str.replace(patt, '\\1')
+    
+#%%
 def init_seed(seed):
     if seed is not None:
         random.seed(seed)
