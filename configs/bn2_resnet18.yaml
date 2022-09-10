@@ -4,9 +4,9 @@ data_dir: '/datadrive/bwfolder/data'
 # data_dir: './data'
 label_dir: '/datadrive/bwfolder/labels'
 # label_dir: 'labels'
-label_csv: {'train': 'PASCAL_BW10k_Val.csv',
+label_csv: {'train': 'PASCAL_BW10k_Train.csv',
             'test': 'PASCAL_BW10k_Test.csv',
-            'val': 'PASCAL_BW10k_Train.csv',
+            'val': 'PASCAL_BW10k_Val.csv',
             'predict': 'PASCAL_BW10k_Train.csv'}
 use_survey: ['pascal', 'cces']
 sp_dict: {'ZC': 0,
