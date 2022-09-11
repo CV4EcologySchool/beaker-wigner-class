@@ -65,4 +65,5 @@ snr_filt_min: 5
 snr_trunc: 80
 ici_max: 1
 use_ici: True
+ici_mult: 1
 

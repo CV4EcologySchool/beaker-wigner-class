@@ -45,7 +45,7 @@ class BWDataset(Dataset):
         self.wigMax /= max(self.wigMax)
         self.wigMax = self.wigMax[:, np.newaxis]
         self.event = df.station.tolist()
-        self.ici = df.ici.values[:, np.newaxis] * 10
+        self.ici = df.ici.values[:, np.newaxis] * cfg['ici_mult']
         self.survey = df.survey.tolist()
         snr_par = cfg['snr_scale_params']
         self.snr_scale = df.snr.values / snr_par['max_val'] * (1-snr_par['min_prob']) + snr_par['min_prob']
