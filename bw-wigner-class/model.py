@@ -17,7 +17,7 @@ TODO:
 '''
 
 import torch.nn as nn
-from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights
 import torch
 
 class BeakerNet(nn.Module):
@@ -28,9 +28,10 @@ class BeakerNet(nn.Module):
             architecture (layers).
         '''
         super(BeakerNet, self).__init__()
-
-        self.feature_extractor = resnet18(weights=ResNet18_Weights.DEFAULT)       # "pretrained": use weights pre-trained on ImageNet
-
+        if not 'model' in cfg.keys() or cfg['model'] == 'r18':
+            self.feature_extractor = resnet18(weights=ResNet18_Weights.DEFAULT)       # "pretrained": use weights pre-trained on ImageNet
+        elif cfg['model'] == 'r50':
+            self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
         # replace the very last layer from the original, 1000-class output
         # ImageNet to a new one that outputs num_classes
         last_layer = self.feature_extractor.fc                          # tip: print(self.feature_extractor) to get info on how model is set up
