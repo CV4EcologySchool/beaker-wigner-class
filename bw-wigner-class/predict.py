@@ -112,6 +112,7 @@ def pred_plots(df, cfg, name, model):
     ax4.text(x=.08, y=.2, s=cl_rep)
     ax4.axis('off')
     plt.savefig(os.path.join(outdir, 'ConfMats_'+name+'.png'))
+    plt.close(fig)
     
     # PR curve by species
     plt.figure(figsize=(5,5))
@@ -284,6 +285,7 @@ def plot_top_n(df, cfg, name='TopN.png', lab_true=False, title='', model=None, l
         fig.suptitle(title)
         fig.subplots_adjust(top=.95)
     fig.savefig(name)
+    plt.close(fig)
     
 def do_pred_work(cfg, args, split='train', pred_df=None):
     suff = '_' + args.name + 'pred.csv'
