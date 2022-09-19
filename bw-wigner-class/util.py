@@ -103,6 +103,7 @@ class MySelCE(nn.Module):
     
     def forward(self, inputs, targets):
         batch = inputs.size()[0]
+        device = inputs.device
         # compute cross ent loss for preds scaled by selector prob (last col)
         in_pred = torch.softmax(inputs[:, :-1], 1)
         ce_loss = - torch.log(in_pred[range(batch), targets]) * inputs[:, -1]
@@ -113,7 +114,7 @@ class MySelCE(nn.Module):
             ce_loss = torch.sum(ce_loss) / batch
         # compute power loss for difference from desired coverage
         emp_cov = torch.mean(inputs[:, -1])
-        lam_loss = self.lam * torch.pow(torch.maximum(self.coverage - emp_cov, torch.Tensor([0])), 2)
+        lam_loss = self.lam * torch.pow(torch.maximum(self.coverage - emp_cov, torch.Tensor([0]).to(device)), 2)
         # print(ce_loss/emp_cov)
         # print(emp_cov)
         # print(lam_loss)
