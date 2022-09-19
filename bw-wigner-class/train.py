@@ -166,6 +166,7 @@ def train(cfg, dataloader, model, optimizer):
         sel_criterion = MySelCE(weight=weights,
                                 coverage=cfg['sel_coverage'],
                                 lam=cfg['sel_lambda'])
+        weights = torch.concat((weights, torch.ones(1)))
     criterion = CrossEntSNR(weight=weights)
     # init running averages
     loss_total, oa_total = 0.0, 0.0
