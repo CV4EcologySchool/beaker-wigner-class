@@ -167,6 +167,7 @@ def train(cfg, dataloader, model, optimizer):
                                 coverage=cfg['sel_coverage'],
                                 lam=cfg['sel_lambda'])
         weights = torch.concat((weights, torch.ones(1).to(device)))
+        alpha = cfg['sel_alpha']
     criterion = CrossEntSNR(weight=weights)
     # init running averages
     loss_total, oa_total = 0.0, 0.0
