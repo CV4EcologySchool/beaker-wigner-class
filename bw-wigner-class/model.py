@@ -28,7 +28,7 @@ class BeakerNet(nn.Module):
             architecture (layers).
         '''
         super(BeakerNet, self).__init__()
-        if not 'model' in cfg.keys() or cfg['model'] == 'r18':
+        if cfg['model'] == 'r18':
             self.feature_extractor = resnet18(weights=ResNet18_Weights.DEFAULT)       # "pretrained": use weights pre-trained on ImageNet
         elif cfg['model'] == 'r50':
             self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
@@ -39,9 +39,21 @@ class BeakerNet(nn.Module):
         in_features = last_layer.in_features + cfg['extra_params'] + cfg['use_ici']      # number of input dimensions to last (classifier) layer
         
         self.feature_extractor.fc = nn.Identity()                       # discard last layer...
-
         self.classifier = nn.Linear(in_features, cfg['num_classes'])           # ...and create a new one
-    
+        try:
+            if cfg['do_selnet']:
+                self.sel_model = nn.Sequential(
+                    nn.Linear(in_features, 512),
+                    nn.ReLU(),
+                    nn.BatchNorm1d(512),
+                    nn.Linear(512, 1),
+                    nn.Sigmoid()
+                    )
+                else:
+                    self.sel_model = None
+        except:
+            self.sel_model = None
+                
 
     def forward(self, x, extras=None):
         '''
@@ -57,5 +69,10 @@ class BeakerNet(nn.Module):
             features = torch.hstack([features, extras]).float()
         
         prediction = self.classifier(features)  # prediction.size(): [B x num_classes]
+        # if we are doing a selnet model
+        try:
+            if self.sel_model is not None:
+                selection = self.sel_model(features)
+                prediction = torch.hstack([prediction, selection])
 
         return prediction

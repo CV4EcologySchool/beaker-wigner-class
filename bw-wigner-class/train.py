@@ -19,7 +19,7 @@ import torch
 import glob
 import yaml
 import argparse
-from util import init_seed, CrossEntSNR
+from util import init_seed, CrossEntSNR, MySelCE
 import numpy as np
 from torch.optim.lr_scheduler import StepLR
 import sklearn.metrics as met
@@ -162,6 +162,10 @@ def train(cfg, dataloader, model, optimizer):
 
     # define loss function - MAY CHANGE LATER
     # criterion = nn.CrossEntropyLoss(weight = weights)
+    if cfg['do_selnet']:
+        sel_criterion = MySelCE(weight=weights,
+                                coverage=cfg['sel_coverage'],
+                                lam=cfg['sel_lam'])
     criterion = CrossEntSNR(weight=weights)
     # init running averages
     loss_total, oa_total = 0.0, 0.0
@@ -186,6 +190,10 @@ def train(cfg, dataloader, model, optimizer):
         optimizer.zero_grad()
         # calc loss and full send back
         loss = criterion(prediction, label, snr)
+        if cfg['do_selnet']:
+            sel_loss = sel_criterion(prediction, label)
+            loss = loss * alpha + (1-alpha) * sel_loss
+            
         loss.backward()
         
         optimizer.step()
@@ -294,7 +302,12 @@ def main():
     init_seed(cfg.get('seed', None))
     
     device = cfg['device']
-    
+    # adding stuff that might be m
+    if not 'do_selnet' in cfg.keys():
+        cfg['do_selnet'] = False
+    if not 'model' in cfg.keys():
+        cfg['model'] = 'r18'
+        
     if device != 'cpu' and not torch.cuda.is_available():
         print(f'WARNING: device set to "{device}" but CUDA not available; falling back to CPU...')
         cfg['device'] = 'cpu'

@@ -63,7 +63,7 @@ class FocalLoss(nn.Module):
             return x.sum()
         else:
             return x
-
+#%%
 class CrossEntSNR(nn.CrossEntropyLoss):
     def __init__(self, weight):
         super().__init__(weight=weight)
@@ -73,6 +73,53 @@ class CrossEntSNR(nn.CrossEntropyLoss):
         ce = ce * snr_scale
         return ce.mean()
 
+class MyCE(nn.Module):
+    def __init__(self, weight = None):
+        super().__init__()
+        self.weight=weight
+        self.eps = 1e-7
+    
+    def forward(self, inputs, targets):
+        batch = inputs.size()[0]
+        inputs = torch.softmax(inputs, 1)
+        # print(inputs[range(batch),targets])
+    
+        loss = - torch.log(inputs[range(batch), targets] + self.eps)
+        # print(loss)
+        if self.weight is not None:
+            # print(self.weight[targets])
+            loss = loss * self.weight[targets] 
+            return torch.sum(loss)/ self.weight[targets].sum()
+        else:
+            return torch.sum(loss) / batch
+
+class MySelCE(nn.Module):
+    def __init__(self, weight=None, coverage=.8, lam=32):
+        super().__init__()
+        self.weight = weight
+        self.eps = 1e-7
+        self.lam = lam
+        self.coverage = coverage
+    
+    def forward(self, inputs, targets):
+        batch = inputs.size()[0]
+        # compute cross ent loss for preds scaled by selector prob (last col)
+        in_pred = torch.softmax(inputs[:, :-1], 1)
+        ce_loss = - torch.log(in_pred[range(batch), targets]) * inputs[:, -1]
+        if self.weight is not None:
+            ce_loss = ce_loss * self.weight[targets]
+            ce_loss = torch.sum(ce_loss) / self.weight[targets].sum()
+        else:
+            ce_loss = torch.sum(ce_loss) / batch
+        # compute power loss for difference from desired coverage
+        emp_cov = torch.mean(inputs[:, -1])
+        lam_loss = self.lam * torch.pow(torch.maximum(self.coverage - emp_cov, torch.Tensor([0])), 2)
+        # print(ce_loss/emp_cov)
+        # print(emp_cov)
+        # print(lam_loss)
+        return ce_loss/ emp_cov + lam_loss
+    
+#%%  
 # df is dataframe of predictions, model is .pt
 def get_saliency(df, cfg, model):
     # load .pt file as BeakerNet
