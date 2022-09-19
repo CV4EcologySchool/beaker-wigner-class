@@ -240,6 +240,13 @@ def validate(cfg, dataloader, model):
         weights = torch.ones(cfg['num_classes']).to(device)
 
     # criterion = nn.CrossEntropyLoss(weight=weights)
+    if cfg['do_selnet']:
+        sel_criterion = MySelCE(weight=weights,
+                                coverage=cfg['sel_coverage'],
+                                lam=cfg['sel_lambda'])
+        weights = torch.concat((weights, torch.ones(1).to(device)))
+        alpha = cfg['sel_alpha']
+        
     criterion = CrossEntSNR(weight=weights)
     loss_total, oa_total = 0.0, 0.0
     # class_total = torch.zeros(cfg['num_classes']).cpu()
