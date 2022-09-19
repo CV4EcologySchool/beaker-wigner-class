@@ -49,8 +49,8 @@ class BeakerNet(nn.Module):
                     nn.Linear(512, 1),
                     nn.Sigmoid()
                     )
-                else:
-                    self.sel_model = None
+            else:
+                self.sel_model = None
         except:
             self.sel_model = None
                 
@@ -74,5 +74,6 @@ class BeakerNet(nn.Module):
             if self.sel_model is not None:
                 selection = self.sel_model(features)
                 prediction = torch.hstack([prediction, selection])
-
+                
         return prediction
+    
