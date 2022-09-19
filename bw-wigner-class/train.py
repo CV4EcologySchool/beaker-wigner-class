@@ -165,7 +165,7 @@ def train(cfg, dataloader, model, optimizer):
     if cfg['do_selnet']:
         sel_criterion = MySelCE(weight=weights,
                                 coverage=cfg['sel_coverage'],
-                                lam=cfg['sel_lam'])
+                                lam=cfg['sel_lambda'])
     criterion = CrossEntSNR(weight=weights)
     # init running averages
     loss_total, oa_total = 0.0, 0.0
