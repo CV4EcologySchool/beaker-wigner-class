@@ -47,6 +47,8 @@ def predict(cfg, model, label_csv):
     my_dict = {'pred': [],
                'true': np.array(dataset.species)
         }
+    if cfg['do_selnet']:
+        sel_prob = []
     pred_prob = []
     # send to device and set to train mode
     model.to(device)
@@ -63,7 +65,9 @@ def predict(cfg, model, label_csv):
                 extras = None
             # forward, beakernet!
             prediction = model(data, extras)
-            
+            if cfg['do_selnet']:
+                sel_prob = sel_prob.append(prediction[:, -1].detach().to('cpu').numpy())
+                prediction = prediction[:, :-1]
             # what is proper way to accumulate these preds/probs
             my_dict['pred'].extend(
                 torch.argmax(prediction, dim=1).detach().to('cpu').numpy().tolist())
@@ -86,6 +90,9 @@ def predict(cfg, model, label_csv):
     df = pd.concat([df.reset_index(drop=True), 
                     prob_df.reset_index(drop=True)],
                    axis = 1)
+    if cfg['do_selnet']:
+        sel_prob = np.concatenate(sel_prob)
+        df['sel_prob'] = sel_prob
     return(df)   
     
 def pred_plots(df, cfg, name, model):
