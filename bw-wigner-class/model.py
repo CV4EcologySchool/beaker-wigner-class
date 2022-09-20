@@ -73,7 +73,8 @@ class BeakerNet(nn.Module):
         try:
             if self.sel_model is not None:
                 selection = self.sel_model(features)
-                prediction = torch.hstack([prediction, selection])
+                sel_pred = torch.hstack([self.classifier(features), selection])
+                return prediction, sel_pred
         except:
             pass
         

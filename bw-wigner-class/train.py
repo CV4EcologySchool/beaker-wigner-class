@@ -166,8 +166,9 @@ def train(cfg, dataloader, model, optimizer):
         sel_criterion = MySelCE(weight=weights,
                                 coverage=cfg['sel_coverage'],
                                 lam=cfg['sel_lambda'])
-        weights = torch.concat((weights, torch.ones(1).to(device)))
+        # weights = torch.concat((weights, torch.ones(1).to(device)))
         alpha = cfg['sel_alpha']
+        sel_total = 0.0
     criterion = CrossEntSNR(weight=weights)
     # init running averages
     loss_total, oa_total = 0.0, 0.0
@@ -187,14 +188,18 @@ def train(cfg, dataloader, model, optimizer):
             extras = extras.to(device)
         else:
             extras = None
-        prediction = model(data, extras)
+        if cfg['do_selnet']:
+            prediction, sel_pred = model(data, extras)
+        else:
+            prediction = model(data, extras)
         # have to reste grads
         optimizer.zero_grad()
         # calc loss and full send back
         loss = criterion(prediction, label, snr)
         if cfg['do_selnet']:
-            sel_loss = sel_criterion(prediction, label)
+            sel_loss = sel_criterion(sel_pred, label)
             loss = loss * alpha + (1-alpha) * sel_loss
+            sel_total += sel_loss.item()
             
         loss.backward()
         
@@ -213,9 +218,10 @@ def train(cfg, dataloader, model, optimizer):
         # cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
         
         pb.set_description(
-                '[Train] Loss {:.2f}; OA {:.2f}%;'.format(
+                '[Train] Loss {:.2f}; OA {:.2f}%; Sel {:.2f}'.format(
                 loss_total/(idx + 1),
-                100*oa_total/(idx + 1)
+                100*oa_total/(idx + 1),
+                sel_total/(idx+1)
                 # 100*np.mean(cba)
                 )
             )
@@ -244,7 +250,7 @@ def validate(cfg, dataloader, model):
         sel_criterion = MySelCE(weight=weights,
                                 coverage=cfg['sel_coverage'],
                                 lam=cfg['sel_lambda'])
-        weights = torch.concat((weights, torch.ones(1).to(device)))
+        # weights = torch.concat((weights, torch.ones(1).to(device)))
         alpha = cfg['sel_alpha']
         
     criterion = CrossEntSNR(weight=weights)
@@ -264,7 +270,10 @@ def validate(cfg, dataloader, model):
                 extras = extras.to(device)
             else:
                 extras = None
-            prediction = model(data, extras)
+            if cfg['do_selnet']:
+                prediction, sel_pred = model(data, extras)
+            else:
+                prediction = model(data, extras)
             loss = criterion(prediction, label, snr)
             
             loss_total += loss.item()

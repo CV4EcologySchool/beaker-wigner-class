@@ -64,10 +64,12 @@ def predict(cfg, model, label_csv):
             else:
                 extras = None
             # forward, beakernet!
-            prediction = model(data, extras)
             if cfg['do_selnet']:
-                sel_prob.append(prediction[:, -1].detach().to('cpu').numpy())
-                prediction = prediction[:, :-1]
+                prediction, sel_pred = model(data, extras)
+                sel_prob.append(sel_pred[:, -1].detach().to('cpu').numpy())
+                
+            else:
+                prediction = model(data, extras)
             # what is proper way to accumulate these preds/probs
             my_dict['pred'].extend(
                 torch.argmax(prediction, dim=1).detach().to('cpu').numpy().tolist())
