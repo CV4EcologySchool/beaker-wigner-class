@@ -113,7 +113,10 @@ class MySelCE(nn.Module):
         else:
             ce_loss = torch.sum(ce_loss) / batch
         # compute power loss for difference from desired coverage
-        emp_cov = torch.mean(inputs[:, -1])
+        if self.weight is not None:
+            emp_cov = torch.sum(inputs[:, -1] * self.weight[targets]) / self.weight[targets].sum()
+        else:
+            emp_cov = torch.mean(inputs[:, -1])
         lam_loss = self.lam * torch.pow(torch.maximum(self.coverage - emp_cov, torch.Tensor([0]).to(device)), 2)
         # print(ce_loss/emp_cov)
         # print(emp_cov)

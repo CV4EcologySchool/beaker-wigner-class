@@ -22,7 +22,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_selnetwtsamp_ici10snr5'
+model_save_dir: 'model_selnetclswt_ici10snr5'
 
 # computer parameters
 seed: 11211988
@@ -40,7 +40,7 @@ num_epochs: 50
 # plot params
 plot_top_n: 5
 do_sal: False
-pred_dir: 'pred_selnetwtsamp_ici10snr5'
+pred_dir: 'pred_selnetclswt_ici10snr5'
 do_dff: False
 n_dff: 4
 do_gradcam: False
@@ -52,8 +52,8 @@ rndaff_fill: 127
 # set 1 to turn off 7 standard
 gb_kernel: 1
 gb_max: 2
-weighted_sampler: True
-weighted_loss: False
+weighted_sampler: False
+weighted_loss: True
 # 0, 1 for nothing
 norm_mean: [.5, .5, .5]
 norm_sd: [.046, .046, .046]
