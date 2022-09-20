@@ -66,7 +66,7 @@ def predict(cfg, model, label_csv):
             # forward, beakernet!
             prediction = model(data, extras)
             if cfg['do_selnet']:
-                sel_prob = sel_prob.append(prediction[:, -1].detach().to('cpu').numpy())
+                sel_prob.append(prediction[:, -1].detach().to('cpu').numpy())
                 prediction = prediction[:, :-1]
             # what is proper way to accumulate these preds/probs
             my_dict['pred'].extend(
