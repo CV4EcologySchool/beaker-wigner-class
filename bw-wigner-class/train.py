@@ -177,6 +177,7 @@ def train(cfg, dataloader, model, optimizer):
     # class_count = torch.zeros(cfg['num_classes']).cpu()
     all_pred = np.empty(0)
     all_true = np.empty(0)
+    all_q = np.empty(0)
     pb = trange(len(dataloader))
     has_extras = cfg['use_ici'] + cfg['extra_params']
     
@@ -189,19 +190,22 @@ def train(cfg, dataloader, model, optimizer):
             extras = extras.to(device)
         else:
             extras = None
-        if cfg['do_selnet']:
-            prediction, sel_pred = model(data, extras)
-        else:
-            prediction = model(data, extras)
-        # have to reste grads
-        optimizer.zero_grad()
-        # calc loss and full send back
-        loss = criterion(prediction, label, snr)
-        if cfg['do_selnet']:
-            sel_loss = sel_criterion(sel_pred, label)
-            loss = loss * alpha + (1-alpha) * sel_loss
-            sel_total += sel_loss.item()
-            q_total += torch.mean((sel_pred[:, -1].cpu().detach() > 0.5).float())
+            
+        with torch.cuda.amp.autocast():
+            if cfg['do_selnet']:
+                prediction, sel_pred = model(data, extras)
+            else:
+                prediction = model(data, extras)
+            # have to reste grads
+            optimizer.zero_grad()
+            # calc loss and full send back
+            loss = criterion(prediction, label, snr)
+            if cfg['do_selnet']:
+                sel_loss = sel_criterion(sel_pred, label)
+                loss = loss * alpha + (1-alpha) * sel_loss
+                sel_total += sel_loss.item()
+                q_total += torch.mean((sel_pred[:, -1].cpu().detach() > 0.5).float())
+                all_q = np.append(all_q, sel_pred[:,-1].cpu().detach().numpy())
             
         loss.backward()
         
@@ -243,7 +247,7 @@ def train(cfg, dataloader, model, optimizer):
     loss_total /= len(dataloader)
     oa_total /= len(dataloader)
     
-    return(loss_total, oa_total, all_pred, all_true)
+    return(loss_total, oa_total, all_pred, all_true, all_q)
 
 def validate(cfg, dataloader, model):
     device = cfg['device']
@@ -370,7 +374,7 @@ def main():
         current_epoch += 1
         print(f'Epoch {current_epoch}/{numEpochs}')
 
-        loss_train, oa_train, pred_train, true_train = train(cfg, dl_train, model, optim)
+        loss_train, oa_train, pred_train, true_train, train_q = train(cfg, dl_train, model, optim)
         loss_val, oa_val, pred_val, true_val = validate(cfg, dl_val, model)
         scheduler.step()
         cr_train = met.classification_report(true_train, pred_train, output_dict=True)
@@ -395,6 +399,9 @@ def main():
         writer.add_scalar('Val/Loss', loss_val, current_epoch)
         writer.add_scalar('Val/AvgRcl', cr_val['macro avg']['recall'], current_epoch)
         writer.add_scalar('Val/AvgF1', cr_val['macro avg']['f1-score'], current_epoch)
+        if cfg['do_selnet']:
+            writer.add_histogram('Train/QHist', train_q, current_epoch)
+            
         # combine stats and save
         stats = {
            'loss_train': loss_train,
