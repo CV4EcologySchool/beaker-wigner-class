@@ -201,7 +201,7 @@ def train(cfg, dataloader, model, optimizer):
             sel_loss = sel_criterion(sel_pred, label)
             loss = loss * alpha + (1-alpha) * sel_loss
             sel_total += sel_loss.item()
-            q_total += sel_pred[:, -1].mean().cpu().detach()
+            q_total += torch.mean((sel_pred[:, -1].cpu().detach() > 0.5).float())
             
         loss.backward()
         
@@ -220,7 +220,7 @@ def train(cfg, dataloader, model, optimizer):
         # cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
         if cfg['do_selnet']:
             pb.set_description(
-                    '[Train] Loss {:.2f}; OA {:.2f}%; Sel {:.2f}; Q {:2f}'.format(
+                    '[Train] Loss {:.2f}; OA {:.2f}%; Sel {:.2f}; Q {:.2f}'.format(
                     loss_total/(idx + 1),
                     100*oa_total/(idx + 1),
                     sel_total/(idx+1),
