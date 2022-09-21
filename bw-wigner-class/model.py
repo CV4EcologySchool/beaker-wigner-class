@@ -44,11 +44,12 @@ class BeakerNet(nn.Module):
             if cfg['do_selnet']:
                 self.sel_model = nn.Sequential(
                     nn.Linear(in_features, 128),
-                    nn.Dropout(p=.3),
-                    nn.ReLU(),
+                    # nn.Dropout(p=.3),
                     nn.BatchNorm1d(128),
+                    nn.ReLU(),
                     nn.Linear(128, 64),
-                    nn.Dropout(p=.3),
+                    # nn.Dropout(p=.3),
+                    nn.BatchNorm1d(64),
                     nn.ReLU(),
                     nn.Linear(64, 1),
                     nn.Sigmoid()

@@ -169,6 +169,7 @@ def train(cfg, dataloader, model, optimizer):
         # weights = torch.concat((weights, torch.ones(1).to(device)))
         alpha = cfg['sel_alpha']
         sel_total = 0.0
+        q_total = 0.0
     criterion = CrossEntSNR(weight=weights)
     # init running averages
     loss_total, oa_total = 0.0, 0.0
@@ -200,6 +201,7 @@ def train(cfg, dataloader, model, optimizer):
             sel_loss = sel_criterion(sel_pred, label)
             loss = loss * alpha + (1-alpha) * sel_loss
             sel_total += sel_loss.item()
+            q_total += sel_pred[:, -1].mean().cpu().detach()
             
         loss.backward()
         
@@ -216,15 +218,25 @@ def train(cfg, dataloader, model, optimizer):
         #     class_total[s] += torch.sum(pred_label[label == s] == s).cpu()
          
         # cba = [(x / max(y, 1)) for x, y in zip(class_total, class_count)]
-        
-        pb.set_description(
-                '[Train] Loss {:.2f}; OA {:.2f}%; Sel {:.2f}'.format(
-                loss_total/(idx + 1),
-                100*oa_total/(idx + 1),
-                sel_total/(idx+1)
-                # 100*np.mean(cba)
+        if cfg['do_selnet']:
+            pb.set_description(
+                    '[Train] Loss {:.2f}; OA {:.2f}%; Sel {:.2f}; Q {:2f}'.format(
+                    loss_total/(idx + 1),
+                    100*oa_total/(idx + 1),
+                    sel_total/(idx+1),
+                    q_total/(idx+1)
+                    # 100*np.mean(cba)
+                    )
                 )
-            )
+        else:
+            pb.set_description(
+                    '[Train] Loss {:.2f}; OA {:.2f}%; Sel {:.2f}'.format(
+                    loss_total/(idx + 1),
+                    100*oa_total/(idx + 1),
+                    sel_total/(idx+1)
+                    # 100*np.mean(cba)
+                    )
+                )
         pb.update(1)
     
     pb.close()
