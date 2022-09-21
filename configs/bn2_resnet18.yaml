@@ -22,7 +22,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_selnetclswtlam16.9_ici10snr5'
+model_save_dir: 'model_selnetv3clswtlam16.9'
 
 # computer parameters
 seed: 11211988
@@ -30,17 +30,17 @@ device: cuda
 num_workers: 6
 
 # training hyperparams
-learning_rate: 0.001
+learning_rate: 0.005
 weight_decay: 0.001
-lr_step_count: 15
-lr_step: 1
+lr_step_count: 12
+lr_step: .5
 batch_size: 128
 num_epochs: 50
 
 # plot params
 plot_top_n: 5
 do_sal: False
-pred_dir: 'pred_selnetclswtlam16.9_ici10snr5'
+pred_dir: 'pred_selnetv3clswtlam16.9'
 do_dff: False
 n_dff: 4
 do_gradcam: False
