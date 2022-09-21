@@ -105,6 +105,7 @@ class MySelCE(nn.Module):
         batch = inputs.size()[0]
         device = inputs.device
         # compute cross ent loss for preds scaled by selector prob (last col)
+        # inputs[:, -1] is q from paper - selection prob
         in_pred = torch.softmax(inputs[:, :-1], 1)
         ce_loss = - torch.log(in_pred[range(batch), targets]) * inputs[:, -1]
         if self.weight is not None:
