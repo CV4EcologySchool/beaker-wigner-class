@@ -286,11 +286,12 @@ def validate(cfg, dataloader, model):
                 extras = extras.to(device)
             else:
                 extras = None
-            if cfg['do_selnet']:
-                prediction, sel_pred = model(data, extras)
-            else:
-                prediction = model(data, extras)
-            loss = criterion(prediction, label, snr)
+            with torch.cuda.amp.autocast():
+                if cfg['do_selnet']:
+                    prediction, sel_pred = model(data, extras)
+                else:
+                    prediction = model(data, extras)
+                loss = criterion(prediction, label, snr)
             
             loss_total += loss.item()
             
