@@ -22,7 +22,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_selnetv4wtsamplam32.9'
+model_save_dir: 'model_selnetv5wtsamplam32.9'
 
 # computer parameters
 seed: 11211988
@@ -40,7 +40,7 @@ num_epochs: 50
 # plot params
 plot_top_n: 5
 do_sal: False
-pred_dir: 'pred_selnetv4wtsamplam32.9'
+pred_dir: 'pred_selnetv5wtsamplam32.9'
 do_dff: False
 n_dff: 4
 do_gradcam: False
