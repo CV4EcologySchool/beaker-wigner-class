@@ -191,21 +191,20 @@ def train(cfg, dataloader, model, optimizer):
         else:
             extras = None
             
-        with torch.cuda.amp.autocast():
-            if cfg['do_selnet']:
-                prediction, sel_pred = model(data, extras)
-            else:
-                prediction = model(data, extras)
-            # have to reste grads
-            optimizer.zero_grad()
-            # calc loss and full send back
-            loss = criterion(prediction, label, snr)
-            if cfg['do_selnet']:
-                sel_loss = sel_criterion(sel_pred, label)
-                loss = loss * alpha + (1-alpha) * sel_loss
-                sel_total += sel_loss.item()
-                q_total += torch.mean((sel_pred[:, -1].cpu().detach() > 0.5).float())
-                all_q = np.append(all_q, sel_pred[:,-1].cpu().detach().numpy())
+        if cfg['do_selnet']:
+            prediction, sel_pred = model(data, extras)
+        else:
+            prediction = model(data, extras)
+        # have to reste grads
+        optimizer.zero_grad()
+        # calc loss and full send back
+        loss = criterion(prediction, label, snr)
+        if cfg['do_selnet']:
+            sel_loss = sel_criterion(sel_pred, label)
+            loss = loss * alpha + (1-alpha) * sel_loss
+            sel_total += sel_loss.item()
+            q_total += torch.mean((sel_pred[:, -1].cpu().detach() > 0.5).float())
+            all_q = np.append(all_q, sel_pred[:,-1].cpu().detach().numpy())
             
         loss.backward()
         
@@ -286,12 +285,12 @@ def validate(cfg, dataloader, model):
                 extras = extras.to(device)
             else:
                 extras = None
-            with torch.cuda.amp.autocast():
-                if cfg['do_selnet']:
-                    prediction, sel_pred = model(data, extras)
-                else:
-                    prediction = model(data, extras)
-                loss = criterion(prediction, label, snr)
+        
+            if cfg['do_selnet']:
+                prediction, sel_pred = model(data, extras)
+            else:
+                prediction = model(data, extras)
+            loss = criterion(prediction, label, snr)
             
             loss_total += loss.item()
             
