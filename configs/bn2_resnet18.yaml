@@ -52,6 +52,8 @@ lr_step: .5
 batch_size: 128
 num_epochs: 50
 
+# do pred with no plots only csv
+simple_pred: True
 # plot params
 plot_top_n: 5
 do_sal: False
