@@ -323,6 +323,7 @@ def main():
     parser.add_argument('--config', help='Path to config file', default='configs/bn1_resnet50.yaml')
     parser.add_argument('--model', help='Model state to predict with', default='model_states/0.pt')
     parser.add_argument('--name', help='Name to append to CSV', default='')
+    parser.add_argument('--split', help='Dataset split to predict on', default='')
     args = parser.parse_args()
     
     # load config
@@ -332,7 +333,10 @@ def main():
     # outdir = cfg['pred_dir']
     # os.makedirs(outdir, exist_ok=True) 
     if '.pt' in args.model:
-        do_list = ['train', 'val', 'test'] if cfg['pred_test'] else ['train', 'val']
+        if len(args.split) > 0:
+            do_list = [args.split]
+        else :
+            do_list = ['train', 'val', 'test'] if cfg['pred_test'] else ['train', 'val']
         for do in do_list:
             do_pred_work(cfg, args, split=do)
     elif '.csv' in args.model:
