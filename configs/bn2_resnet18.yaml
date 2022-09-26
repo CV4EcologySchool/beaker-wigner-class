@@ -13,7 +13,22 @@ sp_dict: {'ZC': 0,
           'BB': 1,
            'MS': 2,
            'BW43': 3,
-           'BW37V': 4}
+           # 'BW37V': 4}
+           'BW37V': 4,
+           'BW': 5,
+           'BW26-47': 6,
+           'BW38': 7,
+           'BWC': 8,
+           'BWposs': 9,
+           'BWunid': 10,
+           'GG': 11,
+           'GGposs': 12,
+           'NBHF': 13,
+           'OO': 14,
+           'PM': 15,
+           'SHIP': 16,
+           'Ship': 17}
+do_train: False
 pred_test: True
 model: 'r18'
 check_na_col: ['wigMax', 'dBPP']
