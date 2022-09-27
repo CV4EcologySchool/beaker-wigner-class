@@ -37,7 +37,7 @@ extra_params: 0
 # keeping num_classes as a separate arg in case we want to expand
 # the sp_dict and only use a subset
 num_classes: 5
-model_save_dir: 'model_selnetv5clswtlam16.8'
+model_save_dir: 'model_selnetv5clswtlam32.8'
 
 # computer parameters
 seed: 11211988
@@ -57,7 +57,7 @@ simple_pred: True
 # plot params
 plot_top_n: 5
 do_sal: False
-pred_dir: 'pred_selnetv5clswtlam16.8'
+pred_dir: 'pred_selnetv5clswtlam32.8'
 do_dff: False
 n_dff: 4
 do_gradcam: False
@@ -86,6 +86,6 @@ use_ici: True
 ici_mult: 10
 # selnet
 do_selnet: True
-sel_lambda: 16
+sel_lambda: 32
 sel_coverage: .8
 sel_alpha: .5
