@@ -29,7 +29,8 @@ class BeakerNet(nn.Module):
         '''
         super(BeakerNet, self).__init__()
         if cfg['model'] == 'r18':
-            self.feature_extractor = resnet18(weights=ResNet18_Weights.DEFAULT)       # "pretrained": use weights pre-trained on ImageNet
+            # self.feature_extractor = resnet18(weights=ResNet18_Weights.DEFAULT)       # "pretrained": use weights pre-trained on ImageNet
+            self.feature_extractor = resnet18()
         elif cfg['model'] == 'r50':
             self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
         # replace the very last layer from the original, 1000-class output
